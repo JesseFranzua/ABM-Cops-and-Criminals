@@ -18,14 +18,20 @@ def get_distance(pos_1, pos_2):
     return math.sqrt(dx ** 2 + dy ** 2)
 
 class Criminal(Agent):
-    def __init__(self, unique_id, model, pos):
-        super().__init__(unique_id, model, pos)
+    def __init__(
+        self, pos, model, moore=True, wealth=100, 
+        risk_tolerance=0.5, search_radius=1, 
+        risk_radius=2, jail_time=0
+        ):
+        super().__init__(pos, model)
 
         self.pos = pos
-        self.wealth = 100
-        self.risk_tolerance = 0.5
-        self.search_radius = 1
-        self.jail_time = 0
+        self.wealth = wealth
+        self.risk_tolerance = risk_tolerance
+        self.search_radius = search_radius
+        self.jail_time = jail_time
+        self.moore = moore
+        self.risk_radius = risk_radius
     
     def get_sugar(self, pos):
         this_cell = self.model.grid.get_cell_list_contents([pos])
@@ -38,26 +44,34 @@ class Criminal(Agent):
         Returns the wealth in a given cell
         """
         sugar_patch = self.get_sugar(self.pos)
-        return 1
+        return sugar_patch.amount
     
     def get_risk(self, pos):
         """
         Returns the risk in a given cell
+        TODO: determine risk_radius and risk per cop
         """
-        return 0.4
+        n_cops_around = 0
+        neighbors = self.model.grid.get_neighbors(pos, self.moore, True, self.risk_radius)
+        for n in neighbors:
+            if type(n) is Cop:
+                n_cops_around += 1
+        risk = n_cops_around * 0.1
+        return risk
     
     def do_crime(self, pos):
         """
         Depletes the cell's resources and add them to the criminal's wealth
         """
-        loot = self.get_wealth(pos)
-        self.wealth += loot
-        # do something that erases the cell's wealth
-        return loot
+        sugar_patch = self.get_sugar(self.pos)
+        self.wealth += sugar_patch.amount
+        sugar_patch.amount = 0
+    
     
     def get_caught(self):
         """ 
         Gives the criminal a fine and sends them to jail
+        TODO: integrate with cop class
         """
         self.wealth -= self.model.fine
         self.jail_time = 5
@@ -74,10 +88,15 @@ class Criminal(Agent):
             return
         
         # get all surrounding cells, can extend to cells of other criminals in the network
-        neighborhood = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=True, radius=self.search_radius)
+        neighborhood = self.model.grid.get_neighborhood(
+            self.pos, moore=True, include_center=True, radius=self.search_radius
+        )
 
         # filter the cells that have an acceptable risk 
         options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance]
+
+        if len(options) == 0:
+            return
 
         # determine which cell has the most wealth
         wealth = [self.get_wealth(cell) for cell in options]
@@ -217,14 +236,15 @@ class Cop(Agent):
         #print("neighbours", str(neighbors))
         #contents_radius = [self.model.grid.get_cell_list_contents([position]) for position in neighbors]
 
-        catchable_criminals = [obj for obj in neighbors if isinstance(obj, SsAgent)]
+        # catchable_criminals = [obj for obj in neighbors if isinstance(obj, SsAgent)]
+        catchable_criminals = [obj for obj in neighbors if isinstance(obj, Criminal)]
         print(catchable_criminals)
         if len(catchable_criminals) > 0:
             criminal_to_catch = self.random.choice(catchable_criminals)
             #print("Gonna catch em" + str(criminal_to_catch))
             # here remove some wealth from the criminal, for now minus one sugar for the ant
             # self.model.reduce_wealth(criminal_to_catch)
-            criminal_to_catch.sugar -= 1000
+            criminal_to_catch.wealth -= 1000
             print("Gothca")
             # self.model.grid._remove_agent(criminal_to_catch.pos, criminal_to_catch)
             # self.model.schedule.remove(criminal_to_catch)

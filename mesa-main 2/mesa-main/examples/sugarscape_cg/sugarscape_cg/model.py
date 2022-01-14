@@ -13,7 +13,7 @@ from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 
-from .agents import SsAgent, Sugar, Cop
+from .agents import SsAgent, Sugar, Cop, Criminal
 from .schedule import RandomActivationByBreed
 
 import os
@@ -58,16 +58,27 @@ class SugarscapeCg(Model):
             self.grid.place_agent(sugar, (x, y))
             self.schedule.add(sugar)
 
+        # # Create agent:
+        # for i in range(self.initial_population_criminals):
+        #     x = self.random.randrange(self.width)
+        #     y = self.random.randrange(self.height)
+        #     sugar = self.random.randrange(6, 25)
+        #     metabolism = self.random.randrange(2, 4)
+        #     vision = self.random.randrange(1, 6)
+        #     ssa = SsAgent((x, y), self, False, sugar, metabolism, vision)
+        #     self.grid.place_agent(ssa, (x, y))
+        #     self.schedule.add(ssa)
+
         # Create agent:
         for i in range(self.initial_population_criminals):
             x = self.random.randrange(self.width)
             y = self.random.randrange(self.height)
-            sugar = self.random.randrange(6, 25)
-            metabolism = self.random.randrange(2, 4)
-            vision = self.random.randrange(1, 6)
-            ssa = SsAgent((x, y), self, False, sugar, metabolism, vision)
-            self.grid.place_agent(ssa, (x, y))
-            self.schedule.add(ssa)
+            wealth = self.random.randrange(6, 25)
+            risk_tolerance = self.random.randrange(0, 1)
+            search_radius = self.random.randrange(1, 3)
+            criminal = Criminal((x, y), self, True, wealth, risk_tolerance, search_radius)
+            self.grid.place_agent(criminal, (x, y))
+            self.schedule.add(criminal)
         
         for i in range(self.initial_population_cops):
             x = self.random.randrange(self.width)
