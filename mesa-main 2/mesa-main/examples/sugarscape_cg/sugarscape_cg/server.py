@@ -1,7 +1,7 @@
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.modules import CanvasGrid, ChartModule
 
-from .agents import SsAgent, Sugar, Cop
+from .agents import SsAgent, Sugar, Cop, Criminal
 from .model import SugarscapeCg
 
 #color_dic = {4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800"}
@@ -14,8 +14,8 @@ def SsAgent_portrayal(agent):
 
     portrayal = {}
 
-    if type(agent) is SsAgent:
-        portrayal["Shape"] = "sugarscape_cg/resources/ant.png"
+    if type(agent) is Criminal:
+        portrayal["Shape"] = "sugarscape_cg/resources/criminal.png"
         portrayal["scale"] = 0.9
         portrayal["Layer"] = 1
     
@@ -23,6 +23,7 @@ def SsAgent_portrayal(agent):
         portrayal["Shape"] = "sugarscape_cg/resources/cop.png"
         portrayal["scale"] = 0.9
         portrayal["Layer"] = 1
+    
 
     elif type(agent) is Sugar:
         if agent.amount != 0:
