@@ -17,6 +17,7 @@ from .agents import SsAgent, Sugar, Cop, Criminal
 from .schedule import RandomActivationByBreed
 
 import os
+import random
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,7 +46,7 @@ class SugarscapeCg(Model):
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
         self.datacollector = DataCollector(
-            {"SsAgent": lambda m: m.schedule.get_breed_count(SsAgent)}
+            {"Criminal Wealth": lambda m: m.schedule.get_breed_count(SsAgent)}
         )
 
         # Create sugar
@@ -74,7 +75,7 @@ class SugarscapeCg(Model):
             x = self.random.randrange(self.width)
             y = self.random.randrange(self.height)
             wealth = self.random.randrange(6, 25)
-            risk_tolerance = self.random.randrange(0, 1)
+            risk_tolerance = random.random()
             search_radius = self.random.randrange(1, 3)
             criminal = Criminal((x, y), self, True, wealth, risk_tolerance, search_radius)
             self.grid.place_agent(criminal, (x, y))

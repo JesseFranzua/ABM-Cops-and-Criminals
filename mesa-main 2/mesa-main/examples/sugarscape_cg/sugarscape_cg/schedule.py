@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from mesa.time import RandomActivation
 
+from .agents import Criminal
 
 class RandomActivationByBreed(RandomActivation):
     """
@@ -72,4 +73,16 @@ class RandomActivationByBreed(RandomActivation):
         """
         Returns the current number of agents of certain breed in the queue.
         """
-        return len(self.agents_by_breed[breed_class].values())
+        total_wealth = 0
+        for agent in self.model.schedule.agents:
+            if type(agent) is Criminal:
+                total_wealth += agent.wealth
+        return total_wealth
+        #return len(self.agents_by_breed[breed_class].values())
+
+    def get_criminal_wealth(self):
+        total_wealth = 0
+        for agent in self.model.schedule.agents:
+            if type(agent) is Criminal:
+                total_wealth += agent.wealth
+        return total_wealth

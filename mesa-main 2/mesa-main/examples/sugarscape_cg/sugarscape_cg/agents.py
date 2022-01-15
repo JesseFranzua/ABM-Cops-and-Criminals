@@ -44,6 +44,7 @@ class Criminal(Agent):
         Returns the wealth in a given cell
         """
         sugar_patch = self.get_sugar(self.pos)
+        print(sugar_patch.amount)
         return sugar_patch.amount
     
     def get_risk(self, pos):
@@ -66,15 +67,6 @@ class Criminal(Agent):
         sugar_patch = self.get_sugar(self.pos)
         self.wealth += sugar_patch.amount
         sugar_patch.amount = 0
-    
-    
-    def get_caught(self):
-        """ 
-        Gives the criminal a fine and sends them to jail
-        TODO: integrate with cop class
-        """
-        self.wealth -= self.model.fine
-        self.jail_time = 5
 
     def step(self):
         '''
@@ -100,18 +92,18 @@ class Criminal(Agent):
 
         # determine which cell has the most wealth
         wealth = [self.get_wealth(cell) for cell in options]
-        target_cell = options[np.argmax(wealth)]
-
+        if(all(element == wealth[0] for element in wealth)):
+            target_cell = random.choice(options)
+        else:
+            target_cell = options[np.argmax(wealth)]
         # move the criminal to the target cell
         self.model.grid.move_agent(self, target_cell)
 
-        # do the crime or get caught
+        # do the crime
         if random.random() > self.get_risk(target_cell):
             self.do_crime(target_cell)
             print('Succes')
-        else:
-            self.get_caught()
-            print('Caught')
+    
 
 class SsAgent(Agent):
     def __init__(self, pos, model, moore=False, sugar=0, metabolism=0, vision=0):
@@ -175,7 +167,7 @@ class Sugar(Agent):
         self.max_sugar = max_sugar
 
     def step(self):
-        self.amount = min([self.max_sugar, self.amount + 10])
+        self.amount = min([self.max_sugar, self.amount + 1])
 
 class Cop(Agent):
     n_cops=0
@@ -244,7 +236,11 @@ class Cop(Agent):
             #print("Gonna catch em" + str(criminal_to_catch))
             # here remove some wealth from the criminal, for now minus one sugar for the ant
             # self.model.reduce_wealth(criminal_to_catch)
-            criminal_to_catch.wealth -= 1000
-            print("Gothca")
+            
+            #if not yet in jail
+            if(criminal_to_catch.jail_time==0):
+                criminal_to_catch.wealth -= 50
+                criminal_to_catch.jail_time += 5
+                print("Gothca")
             # self.model.grid._remove_agent(criminal_to_catch.pos, criminal_to_catch)
             # self.model.schedule.remove(criminal_to_catch)
