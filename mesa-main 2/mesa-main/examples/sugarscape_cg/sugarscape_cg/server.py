@@ -4,8 +4,20 @@ from mesa.visualization.modules import CanvasGrid, ChartModule
 from .agents import SsAgent, Sugar, Cop, Criminal
 from .model import SugarscapeCg
 
+from matplotlib import cm
+from matplotlib.colors import rgb2hex
+
+colors = cm.get_cmap('inferno', 50) # 50 colors out of inferno cmap
+hex_codes = []
+
+for i in range(colors.N):
+    rgba = colors(i)
+    hex_codes.append(rgb2hex(rgba))
+
+color_dic = { i : hex_codes[i] for i in range(0, len(hex_codes)) }
+
 #color_dic = {4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800"}
-color_dic = {0: "#D5D9DC", 4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800",29:"#D123F3", 26: "#19F834", 28: "#128720",36:'#0F4C16',49:"#F5F51C",44:"#F5C41C",37:"#F5921C",25:"#F51CE1"}
+# color_dic = {0: "#D5D9DC", 4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800",29:"#D123F3", 26: "#19F834", 28: "#128720",36:'#0F4C16',49:"#F5F51C",44:"#F5C41C",37:"#F5921C",25:"#F51CE1"}
 
 
 def SsAgent_portrayal(agent):
