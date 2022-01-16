@@ -21,7 +21,7 @@ class Criminal(Agent):
     def __init__(
         self, pos, model, moore=True, wealth=100, 
         risk_tolerance=0.5, search_radius=1, 
-        risk_radius=2, jail_time=0
+        risk_radius=2, jail_time=0, does_crime=False
         ):
         super().__init__(pos, model)
 
@@ -32,6 +32,7 @@ class Criminal(Agent):
         self.jail_time = jail_time
         self.moore = moore
         self.risk_radius = risk_radius
+        self.does_crime = does_crime
     
     def get_sugar(self, pos):
         this_cell = self.model.grid.get_cell_list_contents([pos])
@@ -44,7 +45,6 @@ class Criminal(Agent):
         Returns the wealth in a given cell
         """
         sugar_patch = self.get_sugar(self.pos)
-        print(sugar_patch.amount)
         return sugar_patch.amount
     
     def get_risk(self, pos):
@@ -88,6 +88,7 @@ class Criminal(Agent):
         options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance]
 
         if len(options) == 0:
+            self.does_crime = False
             return
 
         # determine which cell has the most wealth
@@ -101,8 +102,13 @@ class Criminal(Agent):
 
         # do the crime
         if random.random() > self.get_risk(target_cell):
+            self.does_crime = True
             self.do_crime(target_cell)
             print('Succes')
+        else:
+            self.does_crime = False
+            print('Didnt steal')
+            
     
 
 class SsAgent(Agent):
@@ -167,7 +173,7 @@ class Sugar(Agent):
         self.max_sugar = max_sugar
 
     def step(self):
-        self.amount = min([self.max_sugar, self.amount + 1])
+        self.amount = min([self.max_sugar, self.amount + 10])
 
 class Cop(Agent):
     n_cops=0
@@ -230,7 +236,6 @@ class Cop(Agent):
 
         # catchable_criminals = [obj for obj in neighbors if isinstance(obj, SsAgent)]
         catchable_criminals = [obj for obj in neighbors if isinstance(obj, Criminal)]
-        print(catchable_criminals)
         if len(catchable_criminals) > 0:
             criminal_to_catch = self.random.choice(catchable_criminals)
             #print("Gonna catch em" + str(criminal_to_catch))
@@ -238,8 +243,8 @@ class Cop(Agent):
             # self.model.reduce_wealth(criminal_to_catch)
             
             #if not yet in jail
-            if(criminal_to_catch.jail_time==0):
-                criminal_to_catch.wealth -= 50
+            if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):
+                criminal_to_catch.wealth -= 100
                 criminal_to_catch.jail_time += 5
                 print("Gothca")
             # self.model.grid._remove_agent(criminal_to_catch.pos, criminal_to_catch)

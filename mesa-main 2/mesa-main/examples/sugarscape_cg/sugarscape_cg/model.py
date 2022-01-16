@@ -29,7 +29,7 @@ class SugarscapeCg(Model):
 
     verbose = True  # Print-monitoring
 
-    def __init__(self, height=50, width=50, initial_population_criminals=100,initial_population_cops=50):
+    def __init__(self, height=50, width=50, initial_population_criminals=50,initial_population_cops=100):
         """
         Create a new Constant Growback model with the given parameters.
 
