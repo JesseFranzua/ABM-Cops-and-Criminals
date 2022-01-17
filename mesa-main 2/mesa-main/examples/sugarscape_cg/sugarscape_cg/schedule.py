@@ -80,9 +80,13 @@ class RandomActivationByBreed(RandomActivation):
         return total_wealth
         #return len(self.agents_by_breed[breed_class].values())
 
-    def get_criminal_wealth(self):
-        total_wealth = 0
+    def get_criminal_count(self):
+        return len(self.agents_by_breed[Criminal].values())
+
+    def get_criminal_count_in_jail(self):
+        count = 0
         for agent in self.model.schedule.agents:
             if type(agent) is Criminal:
-                total_wealth += agent.wealth
-        return total_wealth
+                if agent.jail_time > 0:
+                    count+=1
+        return count

@@ -46,7 +46,9 @@ class SugarscapeCg(Model):
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
         self.datacollector = DataCollector(
-            {"Criminal Wealth": lambda m: m.schedule.get_breed_count(SsAgent)}
+            {"Criminal Wealth": lambda m: m.schedule.get_breed_count(SsAgent),
+            "Criminal Count": lambda m: m.schedule.get_criminal_count(),
+            "Criminal in Jail Count": lambda m:m.schedule.get_criminal_count_in_jail() }
         )
 
         # Create sugar
