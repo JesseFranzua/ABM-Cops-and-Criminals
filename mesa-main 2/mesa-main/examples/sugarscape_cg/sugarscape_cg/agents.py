@@ -21,7 +21,7 @@ class Criminal(Agent):
     def __init__(
         self, pos, model, moore=True, wealth=100, 
         risk_tolerance=0.5, search_radius=1, 
-        risk_radius=2, jail_time=0, does_crime=False
+        risk_radius=2, jail_time=0,crimes_commited=0, does_crime=False
         ):
         super().__init__(pos, model)
 
@@ -33,6 +33,7 @@ class Criminal(Agent):
         self.moore = moore
         self.risk_radius = risk_radius
         self.does_crime = does_crime
+        self.crimes_commited = crimes_commited
     
     def get_sugar(self, pos):
         this_cell = self.model.grid.get_cell_list_contents([pos])
@@ -44,7 +45,7 @@ class Criminal(Agent):
         """
         Returns the wealth in a given cell
         """
-        sugar_patch = self.get_sugar(self.pos)
+        sugar_patch = self.get_sugar(pos)
         return sugar_patch.amount
     
     def get_risk(self, pos):
@@ -66,6 +67,7 @@ class Criminal(Agent):
         """
         sugar_patch = self.get_sugar(self.pos)
         self.wealth += sugar_patch.amount
+        self.crimes_commited +=1
         sugar_patch.amount = 0
 
     def step(self):
@@ -75,6 +77,7 @@ class Criminal(Agent):
         moves to that location,
         and tries to do the crime.
         '''
+        print("YOOO")
         if self.jail_time > 0:
             self.jail_time -= 1
             return
@@ -86,28 +89,31 @@ class Criminal(Agent):
 
         # filter the cells that have an acceptable risk 
         options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance]
-
+        print(options)
         if len(options) == 0:
             self.does_crime = False
             return
 
         # determine which cell has the most wealth
         wealth = [self.get_wealth(cell) for cell in options]
+        print(wealth)
         if(all(element == wealth[0] for element in wealth)):
             target_cell = random.choice(options)
         else:
-            target_cell = options[np.argmax(wealth)]
+            max_wealth_indices = np.where(wealth == np.max(wealth))[0]
+            target_cell = options[random.choice(max_wealth_indices)]
+        print(target_cell)
         # move the criminal to the target cell
         self.model.grid.move_agent(self, target_cell)
 
         # do the crime
-        if random.random() > self.get_risk(target_cell):
+        if random.random() > self.get_risk(target_cell) and self.get_wealth(target_cell) > 0:
             self.does_crime = True
             self.do_crime(target_cell)
-            print('Succes')
+            #print('Succes')
         else:
             self.does_crime = False
-            print('Didnt steal')
+            #print('Didnt steal')
             
     
 
@@ -173,7 +179,7 @@ class Sugar(Agent):
         self.max_sugar = max_sugar
 
     def step(self):
-        self.amount = min([self.max_sugar, self.amount + 1])
+        self.amount = min([self.max_sugar, self.amount + 10])
 
 class Cop(Agent):
     def __init__(self, pos ,model, radius=1, id = np.random.random()):
@@ -195,15 +201,18 @@ class Cop(Agent):
         # this functions tells the step function how many cops have to switch city parts
         # assume crite_rates is a dictionary with the number of crimes per city part, eg: dict = {'zuid': 42, 'oost': 32, 'noord': 50, 'west': 1000}
         total_crime = np.sum([i for i in crime_rates.values()])
-        new_distribution =  {key: int(round(Cop.n_cops * value / total_crime)) for key, value in crime_rates.items()}
+        new_distribution =  {key: int(round(self.model.n_cops * value / total_crime)) for key, value in crime_rates.items()}
+        print(new_distribution)
         return {key: int(round(value - current_distr[key])) for key, value in new_distribution.items()}
 
     def step(self):
         # when the first cop each step is asked to move, calculate the the distribution 
         if self.model.cops_that_stepped == 0:
-            self.model.distribution_changes = self.distribute_cops(0, self.model.get_agents_per_district(Cop))
+            print(self.model.get_crimes_per_district())
+            print(self.model.get_agents_per_district(Cop))
+            self.model.distribution_changes = self.distribute_cops(self.model.get_crimes_per_district(), self.model.get_agents_per_district(Cop))
             self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0}
-            for district, balance in Cop.made_changes.items():
+            for district, balance in self.model.made_changes.items():
                 if balance > 0:
                     self.model.districts_in_deficit.append(district)
                 elif balance < 0:
@@ -214,7 +223,7 @@ class Cop(Agent):
             self.model.cops_that_stepped += 1
             # set up cops_that_stepped for the next step period
             if self.model.cops_that_stepped == self.model.n_cops:
-                Cop.cops_that_stepped = 0
+                self.model.cops_that_stepped = 0
 
         if self.model.distribution_changes != self.model.made_changes:
             district = self.model.get_district(self.pos)
@@ -279,6 +288,6 @@ class Cop(Agent):
             if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):
                 criminal_to_catch.wealth -= 100
                 criminal_to_catch.jail_time += 5
-                print("Gothca")
+                #print("Gothca")
             # self.model.grid._remove_agent(criminal_to_catch.pos, criminal_to_catch)
             # self.model.schedule.remove(criminal_to_catch)

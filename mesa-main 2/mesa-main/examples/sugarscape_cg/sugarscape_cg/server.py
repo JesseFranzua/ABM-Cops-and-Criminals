@@ -56,9 +56,14 @@ canvas_element = CanvasGrid(SsAgent_portrayal, 50, 50, 500, 500)
 chart_element = ChartModule([{"Label": "Criminal Wealth", "Color": "#AA0000"}])
 chart_element2 = ChartModule([{"Label": "Criminal Count", "Color": "#AA0000"}])
 chart_element3 = ChartModule([{"Label": "Criminal in Jail Count", "Color": "#AA0000"}])
+chart_element4 = ChartModule([{"Label": "Crimes commited", "Color": "#AA0000"}])
+chart_element5 = ChartModule([{"Label": "Centrum", "Color": "#AA0000"},{"Label": "Noord", "Color": "#0000FF"},{"Label": "West", "Color": "#00FF00"},
+{"Label": "Westpoort", "Color": "#FFFF00"},{"Label": "Nieuw-West", "Color": "#964B00"},{"Label": "Zuid", "Color": "#89CFF0"},{"Label": "Oost", "Color": "#A020F0"},
+{"Label": "Zuidoost", "Color": "#FFC0CCB"}])
+
 
 
 server = ModularServer(
-    SugarscapeCg, [canvas_element, chart_element,chart_element2,chart_element3], "Criminals versus Cops Amsterdam"
+    SugarscapeCg, [canvas_element, chart_element,chart_element2,chart_element3,chart_element4,chart_element5], "Criminals versus Cops Amsterdam"
 )
 # server.launch()

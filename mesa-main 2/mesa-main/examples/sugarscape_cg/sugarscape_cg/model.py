@@ -38,7 +38,7 @@ class SugarscapeCg(Model):
     districts_in_deficit = []
     districts_in_surplus = []
 
-    def __init__(self, height=50, width=50, initial_population_criminals=50,initial_population_cops=100):
+    def __init__(self, height=50, width=50, initial_population_criminals=25,initial_population_cops=0):
         """
         Create a new Constant Growback model with the given parameters.
 
@@ -58,7 +58,16 @@ class SugarscapeCg(Model):
         self.datacollector = DataCollector(
             {"Criminal Wealth": lambda m: m.schedule.get_breed_count(SsAgent),
             "Criminal Count": lambda m: m.schedule.get_criminal_count(),
-            "Criminal in Jail Count": lambda m:m.schedule.get_criminal_count_in_jail() }
+            "Criminal in Jail Count": lambda m:m.schedule.get_criminal_count_in_jail(),
+            "Crimes commited": lambda m:m.schedule.get_crimes_commited(),
+            "Centrum": lambda m:m.schedule.get_crimes_per_timestep().get("Centrum"),
+            "Noord": lambda m:m.schedule.get_crimes_per_timestep().get("Noord"),
+            "West": lambda m:m.schedule.get_crimes_per_timestep().get("West"),
+            "Westpoort": lambda m:m.schedule.get_crimes_per_timestep().get("Westpoort"),
+            "Zuid": lambda m:m.schedule.get_crimes_per_timestep().get("Zuid"),
+            "Zuidoost": lambda m:m.schedule.get_crimes_per_timestep().get("Zuidoost"),
+            "Oost": lambda m:m.schedule.get_crimes_per_timestep().get("Oost"),
+            "Nieuw-West": lambda m:m.schedule.get_crimes_per_timestep().get("Nieuw-West")}
         )
 
         # Create sugar
@@ -98,6 +107,7 @@ class SugarscapeCg(Model):
             cop = Cop((x, y) ,self)
             self.grid.place_agent(cop, (x, y))
             self.schedule.add(cop)
+            self.n_cops +=1
 
         self.running = True
         self.datacollector.collect(self)
@@ -179,3 +189,26 @@ class SugarscapeCg(Model):
                     districts_dict[district] += 1
 
         return districts_dict
+
+    def get_crimes_per_district(self):
+        """Get count of agents per district.
+ 
+        :param agent_type: Cop or Criminal to be counted
+        :type agent_type: class
+        
+        :rtype: dict
+        :return: dictionary with district names as keys and respective counts of agent_type
+        """
+        districts_crimes_dict = {}
+        
+        for agents, x, y in self.grid.coord_iter():
+            district = self.get_district((x, y))
+            if district not in districts_crimes_dict.keys():
+                districts_crimes_dict[district] = 0
+            for agent in agents:
+                if type(agent) is Criminal:
+                    if agent.does_crime:
+                        districts_crimes_dict[district] += 1   
+                    #districts_crimes_dict[district] += agent.crimes_commited
+
+        return districts_crimes_dict

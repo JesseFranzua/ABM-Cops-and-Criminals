@@ -49,6 +49,7 @@ class RandomActivationByBreed(RandomActivation):
             by_breed: If True, run all agents of a single breed before running
                       the next one.
         """
+        #Order is first sugar, then criminal, then cop
         if by_breed:
             for agent_class in self.agents_by_breed:
                 self.step_breed(agent_class)
@@ -90,3 +91,15 @@ class RandomActivationByBreed(RandomActivation):
                 if agent.jail_time > 0:
                     count+=1
         return count
+
+    def get_crimes_commited(self):
+        count = 0
+        for agent in self.model.schedule.agents:
+            if type(agent) is Criminal:
+                    count+=agent.crimes_commited
+        return count
+    
+    def get_crimes_per_timestep(self):
+        return self.model.get_crimes_per_district()
+
+    
