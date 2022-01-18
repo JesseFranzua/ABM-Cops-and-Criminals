@@ -9,6 +9,7 @@ Center for Connected Learning and Computer-Based Modeling,
 Northwestern University, Evanston, IL.
 """
 
+from itertools import count
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
@@ -18,6 +19,7 @@ from .schedule import RandomActivationByBreed
 
 import os
 import random
+import numpy as np
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -49,6 +51,7 @@ class SugarscapeCg(Model):
         self.width = width
         self.initial_population_criminals = initial_population_criminals
         self.initial_population_cops = initial_population_cops
+        self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50.txt")
 
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
@@ -59,8 +62,6 @@ class SugarscapeCg(Model):
         )
 
         # Create sugar
-        import numpy as np
-        
         sugar_distribution = np.genfromtxt(base_path + "/amsterdam50x50.txt")
         for _, x, y in self.grid.coord_iter():
             max_sugar = sugar_distribution[x, y]
@@ -125,3 +126,56 @@ class SugarscapeCg(Model):
                 "Final number Sugarscape Agent: ",
                 self.schedule.get_breed_count(SsAgent),
             )
+
+    def get_district(self, pos):
+        """Get respective district of an input position.
+ 
+        :param pos: position
+        :type pos: tuple of ints (x, y)
+        
+        :rtype: string
+        :return: district name
+        """
+        x = pos[0]
+        y = pos[1]
+        initial_wealth = self.initial_wealth_distribution[x][y]
+
+        if initial_wealth == 26.0:
+            return 'Westpoort'
+        elif initial_wealth == 28.0:
+            return 'Noord'
+        elif initial_wealth == 29.0:
+            return 'Nieuw-West'
+        elif initial_wealth == 36.0:
+            return 'West'
+        elif initial_wealth == 44.0:
+            return 'Centrum'
+        elif initial_wealth == 37.0:
+            return 'Oost'
+        elif initial_wealth == 49.0:
+            return 'Zuid'
+        elif initial_wealth == 25.0:
+            return 'Zuidoost'
+        else:
+            return 'Undefined'
+
+    def get_agents_per_district(self, agent_type):
+        """Get count of agents per district.
+ 
+        :param agent_type: Cop or Criminal to be counted
+        :type agent_type: class
+        
+        :rtype: dict
+        :return: dictionary with district names as keys and respective counts of agent_type
+        """
+        districts_dict = {}
+        
+        for agents, x, y in self.grid.coord_iter():
+            district = self.get_district((x, y))
+            if district not in districts_dict.keys():
+                districts_dict[district] = 0
+            for agent in agents:
+                if type(agent) is agent_type:
+                    districts_dict[district] += 1
+
+        return districts_dict
