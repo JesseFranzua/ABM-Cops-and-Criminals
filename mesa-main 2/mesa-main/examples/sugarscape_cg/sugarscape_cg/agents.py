@@ -176,71 +176,104 @@ class Sugar(Agent):
         self.amount = min([self.max_sugar, self.amount + 1])
 
 class Cop(Agent):
-    n_cops=0
-    def __init__(self, pos ,model, radius=1):
+    def __init__(self, pos ,model, radius=1, id = np.random.random()):
         super().__init__(pos, model)
-        #self.id = id
         self.pos = pos
-
-        self.n_cops += 1
         self.radius = radius
-
-    # in the first notebook they use this:
-    #def _init_(self, unique_id, model, pos):
-        #super()._init_(unique_id, model)
+        self.id = id 
 
     def new_cop(self):
-        # this refers to the Model class we need
         self.model.new_agent(Cop, self.pos)
-        Cop.n_cops += 1
+        self.model.n_cops += 1
 
     def remove_cop(self):
-        # this also refers to the Model class we need
         # we may not end up removing any cops but still nice to have this function
         self.model.remove_agent(self)
-        Cop.n_cops -= 1
+        self.model.n_cops -= 1 
 
-    def city_part(self, position, city_part_per_grid_node):
-        # this function returns the city part in which a cop is located
-        pass
-
-    def distribute_cops(self, cop_list, crime_rates, current_distr):
-        # this determines distribution of cops over city parts, it is not the step function
-        # this functions tells the step function how many cops have to switch city parts, so the closest cops can move
+    def distribute_cops(self, crime_rates, current_distr):
+        # this functions tells the step function how many cops have to switch city parts
         # assume crite_rates is a dictionary with the number of crimes per city part, eg: dict = {'zuid': 42, 'oost': 32, 'noord': 50, 'west': 1000}
         total_crime = np.sum([i for i in crime_rates.values()])
         new_distribution =  {key: int(round(Cop.n_cops * value / total_crime)) for key, value in crime_rates.items()}
         return {key: int(round(value - current_distr[key])) for key, value in new_distribution.items()}
 
-    def step(self, distribution_changes=None, positions_cops=None):
-        # this function calls the distribute_cops function
-        # this will be tough to figure out since the actual distribution of cops may not converge to the desired distribution in one period
-        # then, cops in high crime areas may have to move to low crime areas so that other cops can move into the high crime area (if this leads to faster convergence)
-        # for now they just randomly move
+    def step(self):
+        # when the first cop each step is asked to move, calculate the the distribution 
+        if self.model.cops_that_stepped == 0:
+            self.model.distribution_changes = self.distribute_cops(0, self.model.get_agents_per_district(Cop))
+            self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0}
+            for district, balance in Cop.made_changes.items():
+                if balance > 0:
+                    self.model.districts_in_deficit.append(district)
+                elif balance < 0:
+                    self.model.districts_in_surplus.append(district)
+            self.model.cops_that_stepped += 1
         
+        else:
+            self.model.cops_that_stepped += 1
+            # set up cops_that_stepped for the next step period
+            if self.model.cops_that_stepped == self.model.n_cops:
+                Cop.cops_that_stepped = 0
+
+        if self.model.distribution_changes != self.model.made_changes:
+            district = self.model.get_district(self.pos)
+            if district in self.model.districts_in_surplus:
+                self.model.made_changes[district] -= 1
+                new_district, new_pos = self.new_district_move()
+                self.model.made_changes[new_district] += 1
+                self.model.grid.move_agent(self, new_pos)
+                self.catch_criminal(1)   
+            else:
+                self.random_cop_move()
+        
+        else:
+            self.random_cop_move()
+
+    def new_district_move(self):
+        centers = {'Centrum': (32, 30), 'Nieuw-West': (23, 28), 'Noord': (31, 43), 'Oost': (18, 40), 'West': (38, 33), 'Westpoort': (7, 44), 'Zuid': (25, 10), 'Zuidoost': (13, 44)}
+        distance_to_districts = {'Centrum': get_distance(self.pos, (32, 30)), 'Nieuw-West': get_distance(self.pos, (23, 28)), 'Noord': get_distance(self.pos, (31, 43)), 
+        'Oost': get_distance(self.pos, (18, 40)), 'West': get_distance(self.pos, (38, 33)), 'Westpoort': get_distance(self.pos, (7, 44)), 
+        'Zuid': get_distance(self.pos, (25, 10)), 'Zuidoost': get_distance(self.pos, (13, 44))}
+
+        options = {}
+        for key, value in distance_to_districts.items():
+            if key in self.model.districts_in_deficit:
+                options[key] = value
+        min = min(options.values())
+        idx = list(options.keys()).index(min)
+        new_district = list(options.keys())[idx]
+
+        if self.pos[0] > centers[new_district][0]:
+            x_new = self.pos[0] - 1
+        elif self.pos[0] < centers[new_district][0]:
+            x_new = self.pos[0] + 1
+        else: 
+            x_new = self.pos[0]
+        if self.pos[1] > centers[new_district][1]:
+            y_new = self.pos[1] - 1
+        elif self.pos[1] < centers[new_district][1]:
+            y_new = self.pos[1] + 1
+        else:
+            y_new = self.pos[1]
+        
+        return new_district, (x_new, y_new)
+
+    def random_cop_move(self):
         possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=self.radius)
-        # could delete options outside the city part, e.g.:
-        # for index, move in enumerate(possible moves):
-            # if move.city_part != self.city_part():
-                # possible_moves.del(index)
+        # delete options outside the city part
+        for index, move in enumerate(possible_moves):
+            if self.model.get_district(move) != self.model.get_district(self.pos):
+                del possible_moves[index]
         new_pos = random.choice(possible_moves)
         self.model.grid.move_agent(self, new_pos)
-        self.catch_criminal(1)
+        self.catch_criminal(1)        
 
     def catch_criminal(self, city_part_surveillance):
-        # catch radius will depend on city_part_surveillance, which i assume will be the radius of capturing
-        # i assume a cop can only catch one criminal, and that only one criminal can be on a node of the grid
         neighbors = self.model.grid.get_neighbors(self.pos, moore=True,include_center=True, radius=city_part_surveillance)
-        #print("neighbours", str(neighbors))
-        #contents_radius = [self.model.grid.get_cell_list_contents([position]) for position in neighbors]
-
-        # catchable_criminals = [obj for obj in neighbors if isinstance(obj, SsAgent)]
         catchable_criminals = [obj for obj in neighbors if isinstance(obj, Criminal)]
         if len(catchable_criminals) > 0:
             criminal_to_catch = self.random.choice(catchable_criminals)
-            #print("Gonna catch em" + str(criminal_to_catch))
-            # here remove some wealth from the criminal, for now minus one sugar for the ant
-            # self.model.reduce_wealth(criminal_to_catch)
             
             #if not yet in jail
             if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):

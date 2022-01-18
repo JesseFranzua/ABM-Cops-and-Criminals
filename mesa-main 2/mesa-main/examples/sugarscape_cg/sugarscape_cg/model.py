@@ -29,6 +29,13 @@ class SugarscapeCg(Model):
 
     verbose = True  # Print-monitoring
 
+    n_cops = 0  
+    cops_that_stepped = 0
+    distribution_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0}
+    made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0}
+    districts_in_deficit = []
+    districts_in_surplus = []
+
     def __init__(self, height=50, width=50, initial_population_criminals=50,initial_population_cops=100):
         """
         Create a new Constant Growback model with the given parameters.
