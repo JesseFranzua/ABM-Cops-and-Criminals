@@ -18,6 +18,7 @@ from .schedule import RandomActivationByBreed
 
 import os
 import random
+import numpy as np
 
 base_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,6 +43,7 @@ class SugarscapeCg(Model):
         self.width = width
         self.initial_population_criminals = initial_population_criminals
         self.initial_population_cops = initial_population_cops
+        self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50.txt")
 
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
@@ -52,8 +54,6 @@ class SugarscapeCg(Model):
         )
 
         # Create sugar
-        import numpy as np
-        
         sugar_distribution = np.genfromtxt(base_path + "/amsterdam50x50.txt")
         for _, x, y in self.grid.coord_iter():
             max_sugar = sugar_distribution[x, y]
@@ -118,3 +118,27 @@ class SugarscapeCg(Model):
                 "Final number Sugarscape Agent: ",
                 self.schedule.get_breed_count(SsAgent),
             )
+
+    def get_district(self, agent):
+        x = agent.pos[0]
+        y = agent.pos[1]
+        initial_wealth = self.initial_wealth_distribution[x][y]
+
+        if initial_wealth == 26.0:
+            return 'Westpoort'
+        elif initial_wealth == 28.0:
+            return 'Noord'
+        elif initial_wealth == 29.0:
+            return 'Nieuw-West'
+        elif initial_wealth == 36.0:
+            return 'West'
+        elif initial_wealth == 44.0:
+            return 'Centrum'
+        elif initial_wealth == 37.0:
+            return 'Oost'
+        elif initial_wealth == 49.0:
+            return 'Zuid'
+        elif initial_wealth == 25.0:
+            return 'Zuidoost'
+        else:
+            return 'Undefined'
