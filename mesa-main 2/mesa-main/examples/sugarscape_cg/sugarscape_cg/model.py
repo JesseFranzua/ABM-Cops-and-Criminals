@@ -9,6 +9,7 @@ Center for Connected Learning and Computer-Based Modeling,
 Northwestern University, Evanston, IL.
 """
 
+from itertools import count
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
@@ -120,6 +121,14 @@ class SugarscapeCg(Model):
             )
 
     def get_district(self, pos):
+        """Get respective district of an input position.
+ 
+        :param pos: position
+        :type pos: tuple of ints (x, y)
+        
+        :rtype: string
+        :return: district name
+        """
         x = pos[0]
         y = pos[1]
         initial_wealth = self.initial_wealth_distribution[x][y]
@@ -142,3 +151,24 @@ class SugarscapeCg(Model):
             return 'Zuidoost'
         else:
             return 'Undefined'
+
+    def get_agents_per_district(self, agent_type):
+        """Get count of agents per district.
+ 
+        :param agent_type: Cop or Criminal to be counted
+        :type agent_type: class
+        
+        :rtype: dict
+        :return: dictionary with district names as keys and respective counts of agent_type
+        """
+        districts_dict = {}
+        
+        for agents, x, y in self.grid.coord_iter():
+            district = self.get_district((x, y))
+            if district not in districts_dict.keys():
+                districts_dict[district] = 0
+            for agent in agents:
+                if type(agent) is agent_type:
+                    districts_dict[district] += 1
+
+        return districts_dict
