@@ -119,9 +119,9 @@ class SugarscapeCg(Model):
                 self.schedule.get_breed_count(SsAgent),
             )
 
-    def get_district(self, agent):
-        x = agent.pos[0]
-        y = agent.pos[1]
+    def get_district(self, pos):
+        x = pos[0]
+        y = pos[1]
         initial_wealth = self.initial_wealth_distribution[x][y]
 
         if initial_wealth == 26.0:
