@@ -211,21 +211,40 @@ class Cop(Agent):
         # this functions tells the step function how many cops have to switch city parts
         # assume crite_rates is a dictionary with the number of crimes per city part, eg: dict = {'zuid': 42, 'oost': 32, 'noord': 50, 'west': 1000}
         total_crime = np.sum([i for i in crime_rates.values()])
-        new_distribution =  {key: int(round(self.model.n_cops * value / total_crime)) for key, value in crime_rates.items()}
-        print(new_distribution)
-        return {key: int(round(value - current_distr[key])) for key, value in new_distribution.items()}
+        nd_unrounded = {key: self.model.n_cops * value / total_crime for key, value in crime_rates.items()}
+        nd_decimals = {key: value - math.floor(value) for key, value in nd_unrounded.items()}
+
+        cops_left = self.model.n_cops - np.sum([math.floor(i) for i in nd_unrounded.values()])
+        new_distribution = {}
+        while cops_left > 0:
+            for key, value in nd_unrounded.items():
+                if nd_decimals[key] - math.floor(nd_decimals[key]) == max(nd_decimals.values()):
+                    new_distribution[key] = math.ceil(nd_unrounded[key])
+                    nd_decimals[key] = 0
+                    cops_left -= 1
+        for key in nd_decimals.keys():
+            new_distribution[key] = math.floor(nd_unrounded[key])
+        
+        return {key: value - current_distr[key] for key, value in new_distribution.items()}
 
     def step(self):
         # when the first cop each step is asked to move, calculate the the distribution 
         if self.model.cops_that_stepped == 0:
-            print(self.model.get_crimes_per_district())
-            print(self.model.get_agents_per_district(Cop))
+            print('n_cops:', self.model.n_cops)
+            print('current distribution:', self.model.get_agents_per_district(Cop))
             self.model.distribution_changes = self.distribute_cops(self.model.get_crimes_per_district(), self.model.get_agents_per_district(Cop))
-            self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0}
-            for district, balance in self.model.made_changes.items():
+            print('crimes per district:', self.model.get_crimes_per_district())
+            print('disttribution changes:', self.model.distribution_changes)
+            self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
+            self.model.districts_in_deficit = []
+            self.model.districts_in_surplus = []
+            for district, balance in self.model.distribution_changes.items():
+                print('10', district, balance)
                 if balance > 0:
+                    print('20', district)
                     self.model.districts_in_deficit.append(district)
                 elif balance < 0:
+                    print('30', district)
                     self.model.districts_in_surplus.append(district)
             self.model.cops_that_stepped += 1
         
@@ -237,46 +256,61 @@ class Cop(Agent):
 
         if self.model.distribution_changes != self.model.made_changes:
             district = self.model.get_district(self.pos)
+            print(district, self.model.districts_in_surplus)
             if district in self.model.districts_in_surplus:
                 self.model.made_changes[district] -= 1
-                new_district, new_pos = self.new_district_move()
-                self.model.made_changes[new_district] += 1
-                self.model.grid.move_agent(self, new_pos)
-                self.catch_criminal(1)   
+                new_district, new_pos, yes = self.new_district_move()
+                if yes == 'yes':
+                    print('8000', new_district, self.pos, new_pos)
+                    self.model.made_changes[new_district] += 1
+                    self.model.grid.move_agent(self, new_pos)
+                    self.catch_criminal(1)   
+                else:
+                    print('7000')
+                    self.random_cop_move() 
             else:
+                print('9000')
                 self.random_cop_move()
         
         else:
             self.random_cop_move()
+            print('10000')
 
     def new_district_move(self):
-        centers = {'Centrum': (32, 30), 'Nieuw-West': (23, 28), 'Noord': (31, 43), 'Oost': (18, 40), 'West': (38, 33), 'Westpoort': (7, 44), 'Zuid': (25, 10), 'Zuidoost': (13, 44)}
-        distance_to_districts = {'Centrum': get_distance(self.pos, (32, 30)), 'Nieuw-West': get_distance(self.pos, (23, 28)), 'Noord': get_distance(self.pos, (31, 43)), 
-        'Oost': get_distance(self.pos, (18, 40)), 'West': get_distance(self.pos, (38, 33)), 'Westpoort': get_distance(self.pos, (7, 44)), 
-        'Zuid': get_distance(self.pos, (25, 10)), 'Zuidoost': get_distance(self.pos, (13, 44))}
+        centers = {'Centrum': (32, 30), 'Nieuw-West': (9, 14), 'Noord': (31, 43), 'Oost': (40, 18), 'West': (23, 27), 'Westpoort': (12, 33), 'Zuid': (25, 11), 'Zuidoost': (45, 14)}
+        distance_to_districts = {'Centrum': get_distance(self.pos, (32, 30)), 'Nieuw-West': get_distance(self.pos, (9, 14)), 
+        'Noord': get_distance(self.pos, (31, 43)), 'Oost': get_distance(self.pos, (40, 18)), 'West': get_distance(self.pos, (23, 27)), 
+        'Westpoort': get_distance(self.pos, (12, 33)), 'Zuid': get_distance(self.pos, (25, 11)), 'Zuidoost': get_distance(self.pos, (45, 14))}
 
         options = {}
         for key, value in distance_to_districts.items():
             if key in self.model.districts_in_deficit:
                 options[key] = value
-        min = min(options.values())
-        idx = list(options.keys()).index(min)
-        new_district = list(options.keys())[idx]
+        min = 100 
+        new_district = ''
+        for key, value in options.items():
+            if value < min:
+                min = value
+                new_district = key
 
-        if self.pos[0] > centers[new_district][0]:
-            x_new = self.pos[0] - 1
-        elif self.pos[0] < centers[new_district][0]:
-            x_new = self.pos[0] + 1
-        else: 
-            x_new = self.pos[0]
-        if self.pos[1] > centers[new_district][1]:
-            y_new = self.pos[1] - 1
-        elif self.pos[1] < centers[new_district][1]:
-            y_new = self.pos[1] + 1
+        if new_district == '':
+            return '', (0,0), 'no'
         else:
-            y_new = self.pos[1]
+
+            if self.pos[0] > centers[new_district][0]:
+                x_new = self.pos[0] - 1
+            elif self.pos[0] < centers[new_district][0]:
+                x_new = self.pos[0] + 1
+            else: 
+                x_new = self.pos[0]
+            if self.pos[1] > centers[new_district][1]:
+                y_new = self.pos[1] - 1
+            elif self.pos[1] < centers[new_district][1]:
+                y_new = self.pos[1] + 1
+            else:
+                y_new = self.pos[1]
         
-        return new_district, (x_new, y_new)
+            return new_district, (x_new, y_new), 'yes'
 
     def random_cop_move(self):
         possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=self.radius)
