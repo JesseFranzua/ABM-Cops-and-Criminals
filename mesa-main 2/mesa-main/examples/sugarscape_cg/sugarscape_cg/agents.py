@@ -18,6 +18,7 @@ def get_distance(pos_1, pos_2):
     return math.sqrt(dx ** 2 + dy ** 2)
 
 class Criminal(Agent):
+    # TODO: optimize, its slow
     def __init__(
         self, pos, model, moore=True, wealth=100, 
         risk_tolerance=0.5, search_radius=1, 
@@ -70,6 +71,13 @@ class Criminal(Agent):
         self.crimes_commited +=1
         sugar_patch.amount = 0
 
+    def get_utility(self, pos):
+        # if you have a lot of money already,
+        # only go after high paying jobs
+        utility = math.log(self.get_wealth(pos) + 1)
+        return utility
+
+
     def step(self):
         '''
         The criminal makes an inventory of locations available to them,
@@ -77,7 +85,7 @@ class Criminal(Agent):
         moves to that location,
         and tries to do the crime.
         '''
-        print("YOOO")
+        # print("YOOO")
         if self.jail_time > 0:
             self.jail_time -= 1
             return
@@ -87,27 +95,29 @@ class Criminal(Agent):
             self.pos, moore=True, include_center=True, radius=self.search_radius
         )
 
+
         # filter the cells that have an acceptable risk 
-        options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance]
-        print(options)
+        utility_treshold = self.wealth / 1000
+        options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance and self.get_utility(cell) > utility_treshold]
+        # print(options)
         if len(options) == 0:
             self.does_crime = False
             return
 
         # determine which cell has the most wealth
         wealth = [self.get_wealth(cell) for cell in options]
-        print(wealth)
+        # print(wealth)
         if(all(element == wealth[0] for element in wealth)):
             target_cell = random.choice(options)
         else:
             max_wealth_indices = np.where(wealth == np.max(wealth))[0]
             target_cell = options[random.choice(max_wealth_indices)]
-        print(target_cell)
+        # print(target_cell)
         # move the criminal to the target cell
         self.model.grid.move_agent(self, target_cell)
 
         # do the crime
-        if random.random() > self.get_risk(target_cell) and self.get_wealth(target_cell) > 0:
+        if self.get_wealth(target_cell) > 0:
             self.does_crime = True
             self.do_crime(target_cell)
             #print('Succes')
