@@ -189,7 +189,7 @@ class Sugar(Agent):
         self.max_sugar = max_sugar
 
     def step(self):
-        self.amount = min([self.max_sugar, self.amount + 10])
+        self.amount = min([self.max_sugar, self.amount + 1])
 
 class Cop(Agent):
     def __init__(self, pos ,model, radius=1, id = np.random.random()):
