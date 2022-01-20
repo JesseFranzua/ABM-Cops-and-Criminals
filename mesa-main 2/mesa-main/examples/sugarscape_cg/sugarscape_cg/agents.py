@@ -97,7 +97,7 @@ class Criminal(Agent):
 
 
         # filter the cells that have an acceptable risk 
-        utility_treshold = self.wealth / 1000
+        utility_treshold = self.wealth / 10000
         options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance and self.get_utility(cell) > utility_treshold]
         # print(options)
         if len(options) == 0:
