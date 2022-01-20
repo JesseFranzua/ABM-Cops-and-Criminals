@@ -13,6 +13,7 @@ from itertools import count
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
+from sqlalchemy import true
 
 from .agents import SsAgent, Sugar, Cop, Criminal
 from .schedule import RandomActivationByBreed
@@ -38,7 +39,7 @@ class SugarscapeCg(Model):
     districts_in_deficit = []
     districts_in_surplus = []
 
-    def __init__(self, height=50, width=50, initial_population_criminals=1,initial_population_cops=2):
+    def __init__(self, height=50, width=50, initial_population_criminals=1000,initial_population_cops=2):
         """
         Create a new Constant Growback model with the given parameters.
 
@@ -91,8 +92,11 @@ class SugarscapeCg(Model):
 
         # Create agent:
         for i in range(self.initial_population_criminals):
-            x = self.random.randrange(self.width)
-            y = self.random.randrange(self.height)
+            while(True):
+                x = self.random.randrange(self.width)
+                y = self.random.randrange(self.height)
+                if(self.get_district((x,y)) != "Undefined"):
+                    break
             wealth = self.random.randrange(6, 25)
             risk_tolerance = random.random()
             search_radius = self.random.randrange(1, 3)
@@ -101,8 +105,11 @@ class SugarscapeCg(Model):
             self.schedule.add(criminal)
         
         for i in range(self.initial_population_cops):
-            x = self.random.randrange(self.width)
-            y = self.random.randrange(self.height)
+            while(True):
+                x = self.random.randrange(self.width)
+                y = self.random.randrange(self.height)
+                if(self.get_district((x,y)) != "Undefined"):
+                    break
             #id = i = self.random.randrange(6, 25)
             cop = Cop((x, y) ,self)
             self.grid.place_agent(cop, (x, y))
