@@ -86,6 +86,7 @@ class Criminal(Agent):
         and tries to do the crime.
         '''
         # print("YOOO")
+        self.does_crime = False
         if self.jail_time > 0:
             self.jail_time -= 1
             return
@@ -124,6 +125,8 @@ class Criminal(Agent):
         else:
             self.does_crime = False
             #print('Didnt steal')
+        #daily expenses
+        self.wealth -= 20
             
     
 
@@ -189,7 +192,7 @@ class Sugar(Agent):
         self.max_sugar = max_sugar
 
     def step(self):
-        self.amount = min([self.max_sugar, self.amount + 1])
+        self.amount = self.max_sugar
 
 class Cop(Agent):
     def __init__(self, pos ,model, radius=1, id = np.random.random()):
@@ -229,24 +232,20 @@ class Cop(Agent):
 
     def step(self):
         # when the first cop each step is asked to move, calculate the the distribution 
+        #causes tango
         if self.model.cops_that_stepped == 0:
-            print('n_cops:', self.model.n_cops)
-            print('current distribution:', self.model.get_agents_per_district(Cop))
             self.model.distribution_changes = self.distribute_cops(self.model.get_crimes_per_district(), self.model.get_agents_per_district(Cop))
-            print('crimes per district:', self.model.get_crimes_per_district())
-            print('disttribution changes:', self.model.distribution_changes)
             self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
             self.model.districts_in_deficit = []
             self.model.districts_in_surplus = []
             for district, balance in self.model.distribution_changes.items():
-                print('10', district, balance)
                 if balance > 0:
-                    print('20', district)
                     self.model.districts_in_deficit.append(district)
                 elif balance < 0:
-                    print('30', district)
                     self.model.districts_in_surplus.append(district)
             self.model.cops_that_stepped += 1
+            if self.model.n_cops == 1:
+                self.model.cops_that_stepped = 0        
         
         else:
             self.model.cops_that_stepped += 1
@@ -256,25 +255,20 @@ class Cop(Agent):
 
         if self.model.distribution_changes != self.model.made_changes:
             district = self.model.get_district(self.pos)
-            print(district, self.model.districts_in_surplus)
             if district in self.model.districts_in_surplus:
                 self.model.made_changes[district] -= 1
                 new_district, new_pos, yes = self.new_district_move()
                 if yes == 'yes':
-                    print('8000', new_district, self.pos, new_pos)
                     self.model.made_changes[new_district] += 1
                     self.model.grid.move_agent(self, new_pos)
                     self.catch_criminal(1)   
                 else:
-                    print('7000')
-                    self.random_cop_move() 
+                    self.move_to_crime() 
             else:
-                print('9000')
-                self.random_cop_move()
+                self.move_to_crime()
         
         else:
-            self.random_cop_move()
-            print('10000')
+            self.move_to_crime()
 
     def new_district_move(self):
         centers = {'Centrum': (32, 30), 'Nieuw-West': (9, 14), 'Noord': (31, 43), 'Oost': (40, 18), 'West': (23, 27), 'Westpoort': (12, 33), 'Zuid': (25, 11), 'Zuidoost': (45, 14)}
@@ -309,7 +303,7 @@ class Cop(Agent):
                 y_new = self.pos[1] + 1
             else:
                 y_new = self.pos[1]
-        
+
             return new_district, (x_new, y_new), 'yes'
 
     def random_cop_move(self):
@@ -321,17 +315,69 @@ class Cop(Agent):
         new_pos = random.choice(possible_moves)
         self.model.grid.move_agent(self, new_pos)
         self.catch_criminal(1)        
+    
+    def move_to_crime(self):
+        # get moves in a large radius, delete those outside district, select the one with the lowest sugar
+        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=2)
+        possible_moves_dict = {}
+        sugar_per_move = []
+        for index, move in enumerate(possible_moves):
+            if self.model.get_district(move) != self.model.get_district(self.pos):
+                del possible_moves[index]
+            else:
+                possible_moves_dict[self.get_sugar(move)] = move
+                sugar_per_move.append(self.get_sugar(move))
+        sugar_per_move.sort()
+        min_sugar_indices = np.where(sugar_per_move == np.min(sugar_per_move))[0]
+        #changed this so that within the region it moves towards any of the low sugar areas
+        direction = possible_moves[random.choice(min_sugar_indices)]
+        #direction = possible_moves_dict[sugar_per_move[0]]
+
+        if self.pos[0] > direction[0]:
+            x_new = self.pos[0] - 1
+        elif self.pos[0] < direction[0]:
+            x_new = self.pos[0] + 1
+        else: 
+            x_new = self.pos[0]
+        if self.pos[1] > direction[1]:
+            y_new = self.pos[1] - 1
+        elif self.pos[1] < direction[1]:
+            y_new = self.pos[1] + 1
+        else:
+            y_new = self.pos[1]
+
+        new_pos = (x_new, y_new)
+        if(self.police_here(new_pos)):
+            self.random_cop_move()
+        else:
+            self.model.grid.move_agent(self, new_pos)
+            self.catch_criminal(1)   
+
+    def police_here(self,pos):
+        this_cell = self.model.grid.get_cell_list_contents([pos])
+        for agent in this_cell:
+            if type(agent) is Cop:
+                return True
+        return False
+        
+    def get_sugar(self, pos):
+        this_cell = self.model.grid.get_cell_list_contents([pos])
+        for agent in this_cell:
+            if type(agent) is Sugar:
+                return int(agent.amount) 
+
+    def get_max_sugar(self, pos):
+        this_cell = self.model.grid.get_cell_list_contents([pos])
+        for agent in this_cell:
+            if type(agent) is Sugar:
+                return int(agent.amount)     
 
     def catch_criminal(self, city_part_surveillance):
         neighbors = self.model.grid.get_neighbors(self.pos, moore=True,include_center=True, radius=city_part_surveillance)
         catchable_criminals = [obj for obj in neighbors if isinstance(obj, Criminal)]
         if len(catchable_criminals) > 0:
-            criminal_to_catch = self.random.choice(catchable_criminals)
-            
+            criminal_to_catch = self.random.choice(catchable_criminals)         
             #if not yet in jail
             if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):
-                criminal_to_catch.wealth -= 100
-                criminal_to_catch.jail_time += 5
-                #print("Gothca")
-            # self.model.grid._remove_agent(criminal_to_catch.pos, criminal_to_catch)
-            # self.model.schedule.remove(criminal_to_catch)
+                criminal_to_catch.wealth -= self.get_max_sugar(criminal_to_catch.pos)
+                criminal_to_catch.jail_time += 10
