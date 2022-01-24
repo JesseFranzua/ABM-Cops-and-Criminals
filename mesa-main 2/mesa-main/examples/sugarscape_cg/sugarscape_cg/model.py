@@ -100,8 +100,8 @@ class SugarscapeCg(Model):
                     break
             wealth = self.random.randrange(6, 25)
             risk_tolerance = random.random()
-            search_radius = self.random.randrange(1, 3)
-            criminal = Criminal((x, y), self, True, wealth, risk_tolerance, search_radius)
+            search_radius = 1
+            criminal = Criminal((x, y), self, random.randint(0, self.initial_population_criminals), True, wealth, risk_tolerance, search_radius)
             self.grid.place_agent(criminal, (x, y))
             self.schedule.add(criminal)
         
