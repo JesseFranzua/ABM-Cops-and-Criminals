@@ -292,6 +292,7 @@ class Cop(Agent):
             # set up cops_that_stepped for the next step period
             if self.model.cops_that_stepped == self.model.n_cops:
                 self.model.cops_that_stepped = 0
+
         if self.cop_stays_in_district == 0:
             if self.model.distribution_changes != self.model.made_changes:
                 district = self.model.get_district(self.pos)
@@ -400,9 +401,30 @@ class Cop(Agent):
 
         new_pos = (x_new, y_new)
         if self.model.get_district(new_pos) != self.model.get_district(self.pos):
-            print("new position not in same district",new_pos)
-            print("direction of the intended move", direction)
-            print("current position of cop",self.pos)
+            if (self.model.get_district((self.pos[0], self.pos[1] - 1)) != self.model.get_district(self.pos)) and (
+                self.model.get_district((self.pos[0], self.pos[1] - 1)) == self.model.get_district(new_pos)
+                ): # new district is below current district
+                y_new = self.pos[1]
+            elif (self.model.get_district((self.pos[0], self.pos[1] + 1)) != self.model.get_district(self.pos)) and (
+                self.model.get_district((self.pos[0], self.pos[1] + 1)) == self.model.get_district(new_pos)
+                ): # new district is above current district
+                y_new = self.pos[1]
+            elif (self.model.get_district((self.pos[0] - 1, self.pos[1])) != self.model.get_district(self.pos)) and (
+                self.model.get_district((self.pos[0] - 1, self.pos[1])) == self.model.get_district(new_pos)
+                ): # new district is to the left of the current district 
+                x_new = self.pos[0]
+            elif (self.model.get_district((self.pos[0] + 1, self.pos[1])) != self.model.get_district(self.pos)) and (
+                self.model.get_district((self.pos[0] + 1, self.pos[1])) == self.model.get_district(new_pos) 
+                ): # new district is to the right of the current district 
+                x_new = self.pos[0]
+            else:
+                print('WATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATKIFESH')
+            new_pos = (x_new, y_new)
+            if self.model.get_district(new_pos) != self.model.get_district(self.pos):
+                print("new position not in same district",new_pos, self.model.get_district(new_pos))
+                print("direction of the intended move", direction, self.model.get_district(direction))
+                print("current position of cop",self.pos, self.model.get_district(self.pos))
+
         if(self.police_here(new_pos)):
             self.random_cop_move()
         else:
