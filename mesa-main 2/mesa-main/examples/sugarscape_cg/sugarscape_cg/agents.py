@@ -27,7 +27,7 @@ class Criminal(Agent):
         super().__init__(pos, model)
 
         self.pos = pos
-        self.wealth = wealth
+        self.wealth = wealth    
         self.risk_tolerance = risk_tolerance
         self.search_radius = search_radius
         self.jail_time = jail_time
@@ -55,14 +55,17 @@ class Criminal(Agent):
         Returns the risk in a given cell
         TODO: determine risk_radius and risk per cop
         """
-        n_cops_around = 0
-        district = self.model.get_district(pos)
-        district_risk = self.model.surveillance_levels[district]
-        neighbors = self.model.grid.get_neighbors(pos, self.moore, True, district_risk)
+        risk = 0
+        # district = self.model.get_district(pos)
+        # district_risk = self.model.surveillance_levels[district]
+        max_radius = 5
+        neighbors = self.model.grid.get_neighbors(pos, self.moore, True, max_radius)
         for n in neighbors:
             if type(n) is Cop:
-                n_cops_around += 1
-        risk = n_cops_around * 1
+                distance = get_distance(pos, n.pos)
+                if distance == 0: # you are on the same cell as a cop
+                    return 100
+                risk += 1 / distance
         return risk
     
     def do_crime(self, pos):
@@ -74,15 +77,17 @@ class Criminal(Agent):
         self.crimes_commited +=1
         sugar_patch.amount = 0
 
-    def get_utility(self, pos, a=1, b=100, c=0, d=0):
+    def get_utility(self, pos, a=1, b=1, c=0, d=0):
         wealth = self.get_wealth(pos)
         risk = self.get_risk(pos)
         distance = math.sqrt((pos[0] - self.pos[0]) ** 2 + (pos[1] - self.pos[1]) ** 2)
         distance = 0 if distance < 2 else distance # dont discriminate between cells in direct neighborhood
         own_wealth = self.wealth
+        district = self.model.get_district(pos)
+        district_risk = self.model.surveillance_levels[district]
 
         # print(f'a:{a*wealth} b:{b*risk} c:{c*distance} d:{d*own_wealth}')
-        utility = a * wealth - b * risk - c * distance - d * own_wealth
+        utility = a * wealth - b * district_risk * risk - c * distance - d * own_wealth
         return utility
 
 
