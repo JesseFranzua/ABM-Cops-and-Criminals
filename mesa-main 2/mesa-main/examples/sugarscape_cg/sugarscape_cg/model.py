@@ -54,7 +54,7 @@ class SugarscapeCg(Model):
         self.width = width
         self.initial_population_criminals = initial_population_criminals
         self.initial_population_cops = initial_population_cops
-        self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50.txt")
+        self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50new.txt")
 
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
