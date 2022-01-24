@@ -233,12 +233,13 @@ class Sugar(Agent):
         self.amount = self.max_sugar
 
 class Cop(Agent):
-    def __init__(self, pos ,model, radius=1, id = np.random.random(), cop_stays_in_district=0):
+    def __init__(self, pos ,model, radius=1, id = np.random.random(), cop_stays_in_district=0,surveillance_radius=1):
         super().__init__(pos, model)
         self.pos = pos
         self.radius = radius
         self.id = id
         self.cop_stays_in_district = cop_stays_in_district
+        self.surveillance_radius = surveillance_radius
 
     def new_cop(self):
         self.model.new_agent(Cop, self.pos)
@@ -273,6 +274,7 @@ class Cop(Agent):
         # when the first cop each step is asked to move, calculate the the distribution 
         #causes tango
         current_district = self.model.get_district(self.pos)
+        self.surveillance_radius = self.model.surveillance_levels[current_district]
         if self.model.cops_that_stepped == 0:
             self.model.distribution_changes = self.distribute_cops(self.model.get_crimes_per_district(), self.model.get_agents_per_district(Cop))
             self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
@@ -365,7 +367,7 @@ class Cop(Agent):
     
     def move_to_crime(self):
         # get moves in a large radius, delete those outside district, select the one with the lowest sugar
-        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=10)
+        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=self.surveillance_radius)
         possible_moves_dict = {}
         sugar_per_move = []
         feasible_moves = []

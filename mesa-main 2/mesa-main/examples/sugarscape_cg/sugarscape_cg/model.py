@@ -36,7 +36,7 @@ class SugarscapeCg(Model):
     cops_that_stepped = 0
     distribution_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
     made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
-    surveillance_levels ={'Centrum': 3, 'Nieuw-West': 1, 'Noord': 2, 'Oost': 2, 'West': 2, 'Westpoort': 1, 'Zuid': 2, 'Zuidoost': 2, 'Undefined':0}
+    surveillance_levels ={'Centrum': 8, 'Nieuw-West': 2, 'Noord': 6, 'Oost': 6, 'West': 6, 'Westpoort': 2, 'Zuid': 6, 'Zuidoost': 6, 'Undefined':0}
     districts_in_deficit = []
     districts_in_surplus = []
 
