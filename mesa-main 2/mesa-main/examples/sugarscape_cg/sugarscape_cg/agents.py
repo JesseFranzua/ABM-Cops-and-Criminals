@@ -19,7 +19,6 @@ def get_distance(pos_1, pos_2):
     return math.sqrt(dx ** 2 + dy ** 2)
 
 class Criminal(Agent):
-    # TODO: optimize, its slow
     def __init__(
         self, pos, model, buddy_id=None, moore=True, wealth=100, 
         risk_tolerance=0.5, search_radius=1, 
@@ -57,27 +56,32 @@ class Criminal(Agent):
         TODO: determine risk_radius and risk per cop
         """
         n_cops_around = 0
-        neighbors = self.model.grid.get_neighbors(pos, self.moore, True, self.risk_radius)
+        district = self.model.get_district(pos)
+        district_risk = self.model.surveillance_levels[district]
+        neighbors = self.model.grid.get_neighbors(pos, self.moore, True, district_risk)
         for n in neighbors:
             if type(n) is Cop:
                 n_cops_around += 1
-        risk = n_cops_around * 0.1
+        risk = n_cops_around * 1
         return risk
     
     def do_crime(self, pos):
         """
         Depletes the cell's resources and add them to the criminal's wealth
         """
-        sugar_patch = self.get_sugar(self.pos)
+        sugar_patch = self.get_sugar(pos)
         self.wealth += sugar_patch.amount
         self.crimes_commited +=1
         sugar_patch.amount = 0
 
-    def get_utility(self, pos, a=1, b=0, c=0, d=0):
+    def get_utility(self, pos, a=1, b=100, c=0, d=0):
         wealth = self.get_wealth(pos)
         risk = self.get_risk(pos)
         distance = math.sqrt((pos[0] - self.pos[0]) ** 2 + (pos[1] - self.pos[1]) ** 2)
+        distance = 0 if distance < 2 else distance # dont discriminate between cells in direct neighborhood
         own_wealth = self.wealth
+
+        # print(f'a:{a*wealth} b:{b*risk} c:{c*distance} d:{d*own_wealth}')
         utility = a * wealth - b * risk - c * distance - d * own_wealth
         return utility
 
@@ -96,7 +100,12 @@ class Criminal(Agent):
             return
         
         # get all surrounding cells
-        own_neighborhood = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=True, radius=self.search_radius)
+        own_neighborhood = self.model.grid.get_neighborhood(
+            pos=self.pos, 
+            moore=True, 
+            include_center=True, 
+            radius=self.search_radius
+        )
 
         # get the utility of the neighbor cells
         utility_scores = {}
@@ -109,7 +118,12 @@ class Criminal(Agent):
             for agent in agents:
                 if type(agent) is Criminal and (x, y) != self.pos:
                     if agent.buddy_id == self.buddy_id:
-                        neighborhood = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=True, radius=self.search_radius)
+                        neighborhood = self.model.grid.get_neighborhood(
+                            pos=(x, y), 
+                            moore=True, 
+                            include_center=True,
+                            radius=self.search_radius
+                        )
                         for cell in neighborhood:
                             utility_scores[cell] = self.get_utility(cell)
 
@@ -117,14 +131,39 @@ class Criminal(Agent):
         # determine the cell with the highest utility
         # print(f'Utility scores: {utility_scores}')
         highest_utility = max(utility_scores.values())
-        possible_targets = [cell  for (cell, util) in utility_scores.items() if util == highest_utility]
+        possible_targets = [
+            cell  
+            for (cell, util) 
+            in utility_scores.items() 
+            if util == highest_utility
+        ]
+
+        # determine where to move
+        make_buddy_move = False
         target_cell = random.choice(possible_targets)
+
+        if target_cell not in own_neighborhood: 
+            make_buddy_move = True
+            if self.pos[0] > target_cell[0]:
+                x_new = self.pos[0] - 1
+            elif self.pos[0] < target_cell[0]:
+                x_new = self.pos[0] + 1
+            else: 
+                x_new = self.pos[0]
+            if self.pos[1] > target_cell[1]:
+                y_new = self.pos[1] - 1
+            elif self.pos[1] < target_cell[1]:
+                y_new = self.pos[1] + 1
+            else:
+                y_new = self.pos[1]
+            target_cell = (x_new, y_new)
+          
 
         # move to the target cell
         self.model.grid.move_agent(self, target_cell)
 
         # do the crime
-        if self.get_wealth(target_cell) > 0 and highest_utility > 0:
+        if self.get_wealth(target_cell) > 0 and highest_utility > 0 and not make_buddy_move:
             self.does_crime = True
             self.do_crime(target_cell)
         else:
@@ -132,39 +171,6 @@ class Criminal(Agent):
 
         #daily expenses
         self.wealth -= 20
-
-
-
-        # # filter the cells that have an acceptable risk 
-        # utility_treshold = self.wealth / 10000
-        # options = [cell for cell in neighborhood if self.get_risk(cell) < self.risk_tolerance]# and self.get_utility(cell) > utility_treshold]
-        # # print(options)
-        # if len(options) == 0:
-        #     self.does_crime = False
-        #     return
-
-        # # determine which cell has the most wealth
-        # wealth = [self.get_wealth(cell) for cell in options]
-        # # print(wealth)
-        # if(all(element == wealth[0] for element in wealth)):
-        #     target_cell = random.choice(options)
-        # else:
-        #     max_wealth_indices = np.where(wealth == np.max(wealth))[0]
-        #     target_cell = options[random.choice(max_wealth_indices)]
-        # # print(target_cell)
-        # # move the criminal to the target cell
-        # self.model.grid.move_agent(self, target_cell)
-
-        # # do the crime
-        # if self.get_wealth(target_cell) > 0:
-        #     self.does_crime = True
-        #     self.do_crime(target_cell)
-        #     #print('Succes')
-        # else:
-        #     self.does_crime = False
-        #     #print('Didnt steal')
-        # #daily expenses
-        # self.wealth -= 20
             
     
 
