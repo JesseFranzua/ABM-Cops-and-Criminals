@@ -5,19 +5,26 @@ from .agents import SsAgent, Sugar, Cop, Criminal
 from .model import SugarscapeCg
 
 from matplotlib import cm
-from matplotlib.colors import rgb2hex
+from matplotlib.colors import rgb2hex, ListedColormap
 
-colors = cm.get_cmap('inferno', 50) # 50 colors out of inferno cmap
-hex_codes = []
+# colors = cm.get_cmap('inferno', 50) # 50 colors out of inferno cmap
 
-for i in range(colors.N):
-    rgba = colors(i)
-    hex_codes.append(rgb2hex(rgba))
+# district_names = ['Centrum', 'Noord', 'West', 'Zuid', 'Zuidoost', 'Oost', 'Nieuw-West']
+color_dic = {44: '#eb534b', 28: '#34b7eb', 36: '#40943d', 49: '#ebc934', 25: '#800080', 37: '#50d950', 29: '#ffc0cb'}
+# colors = ListedColormap(district_colors)
 
-#color_dic = { i : hex_codes[i] for i in range(0, len(hex_codes)) }
+# hex_codes = []
+
+# for i in range(colors.N):
+#     rgba = colors(i)
+#     hex_codes.append(rgb2hex(rgba))
+
+# color_dic = { i : hex_codes[i] for i in range(0, len(hex_codes)) }
+
+# print(color_dic)
 
 #color_dic = {4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800"}
-color_dic = {0: "#D5D9DC", 4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800",29:"#D123F3", 26: "#19F834", 28: "#128720",36:'#0F4C16',49:"#F5F51C",44:"#F5C41C",37:"#F5921C",25:"#F51CE1"}
+# color_dic = {0: "#D5D9DC", 4: "#005C00", 3: "#008300", 2: "#00AA00", 1: "#00F800",29:"#D123F3", 26: "#19F834", 28: "#128720",36:'#0F4C16',49:"#F5F51C",44:"#F5C41C",37:"#F5921C",25:"#F51CE1"}
 
 
 def SsAgent_portrayal(agent):
@@ -57,8 +64,8 @@ chart_element = ChartModule([{"Label": "Criminal Wealth", "Color": "#AA0000"}])
 chart_element2 = ChartModule([{"Label": "Criminal Count", "Color": "#AA0000"}])
 chart_element3 = ChartModule([{"Label": "Criminal in Jail Count", "Color": "#AA0000"}])
 chart_element4 = ChartModule([{"Label": "Crimes commited", "Color": "#AA0000"}])
-chart_element5 = ChartModule([{"Label": "Centrum", "Color": "#AA0000"},{"Label": "Noord", "Color": "#0000FF"},{"Label": "West", "Color": "#00FF00"},{"Label": "Nieuw-West", "Color": "#964B00"},{"Label": "Zuid", "Color": "#89CFF0"},{"Label": "Oost", "Color": "#A020F0"},
-{"Label": "Zuidoost", "Color": "#FFC0CCB"}])
+chart_element5 = ChartModule([{"Label": "Centrum", "Color": "#eb534b"},{"Label": "Noord", "Color": "#34b7eb"},{"Label": "West", "Color": "#40943d"},{"Label": "Nieuw-West", "Color": "#ffc0cb"},{"Label": "Zuid", "Color": "#ebc934"},{"Label": "Oost", "Color": "#50d950"},
+{"Label": "Zuidoost", "Color": "#800080"}])
 
 
 
