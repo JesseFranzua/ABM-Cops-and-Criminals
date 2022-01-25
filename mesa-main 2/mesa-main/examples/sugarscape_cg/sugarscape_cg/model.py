@@ -34,9 +34,9 @@ class SugarscapeCg(Model):
 
     n_cops = 0  
     cops_that_stepped = 0
-    distribution_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
-    made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
-    surveillance_levels ={'Centrum': 8, 'Nieuw-West': 2, 'Noord': 6, 'Oost': 6, 'West': 6, 'Westpoort': 2, 'Zuid': 6, 'Zuidoost': 6, 'Undefined':0}
+    distribution_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
+    made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
+    surveillance_levels ={'Centrum': 8, 'Nieuw-West': 2, 'Noord': 6, 'Oost': 6, 'West': 6, 'Zuid': 6, 'Zuidoost': 6, 'Undefined':0}
     # surveillance_levels ={'Centrum': 3, 'Nieuw-West': 1, 'Noord': 2, 'Oost': 2, 'West': 2, 'Westpoort': 1, 'Zuid': 2, 'Zuidoost': 2, 'Undefined':0}
     districts_in_deficit = []
     districts_in_surplus = []
@@ -66,7 +66,6 @@ class SugarscapeCg(Model):
             "Centrum": lambda m:m.schedule.get_crimes_per_timestep().get("Centrum"),
             "Noord": lambda m:m.schedule.get_crimes_per_timestep().get("Noord"),
             "West": lambda m:m.schedule.get_crimes_per_timestep().get("West"),
-            "Westpoort": lambda m:m.schedule.get_crimes_per_timestep().get("Westpoort"),
             "Zuid": lambda m:m.schedule.get_crimes_per_timestep().get("Zuid"),
             "Zuidoost": lambda m:m.schedule.get_crimes_per_timestep().get("Zuidoost"),
             "Oost": lambda m:m.schedule.get_crimes_per_timestep().get("Oost"),
@@ -159,9 +158,7 @@ class SugarscapeCg(Model):
         y = pos[1]
         initial_wealth = self.initial_wealth_distribution[x][y]
 
-        if initial_wealth == 26.0:
-            return 'Westpoort'
-        elif initial_wealth == 28.0:
+        if initial_wealth == 28.0:
             return 'Noord'
         elif initial_wealth == 29.0:
             return 'Nieuw-West'
