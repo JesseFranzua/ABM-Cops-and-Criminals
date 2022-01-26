@@ -41,7 +41,7 @@ class SugarscapeCg(Model):
     districts_in_deficit = []
     districts_in_surplus = []
 
-    def __init__(self, height=50, width=50, initial_population_criminals=45,initial_population_cops=40):
+    def __init__(self, height=50, width=50, initial_population_criminals=45,initial_population_cops=40, search_radius=1, radius=1):
         """
         Create a new Constant Growback model with the given parameters.
 
@@ -55,6 +55,8 @@ class SugarscapeCg(Model):
         self.initial_population_criminals = initial_population_criminals
         self.initial_population_cops = initial_population_cops
         self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50new.txt")
+        self.search_radius = search_radius
+        self.radius = radius
 
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
@@ -100,8 +102,8 @@ class SugarscapeCg(Model):
                     break
             wealth = self.random.randrange(6, 25)
             risk_tolerance = random.random()
-            search_radius = 1
-            criminal = Criminal((x, y), self, random.randint(0, self.initial_population_criminals), True, wealth, risk_tolerance, search_radius)
+            # search_radius = 1
+            criminal = Criminal((x, y), self, random.randint(0, self.initial_population_criminals), True, wealth, risk_tolerance, self.search_radius)
             self.grid.place_agent(criminal, (x, y))
             self.schedule.add(criminal)
         
@@ -112,7 +114,7 @@ class SugarscapeCg(Model):
                 if(self.get_district((x,y)) != "Undefined"):
                     break
             #id = i = self.random.randrange(6, 25)
-            cop = Cop((x, y) ,self)
+            cop = Cop((x, y), self, self.radius)
             self.grid.place_agent(cop, (x, y))
             self.schedule.add(cop)
             self.n_cops +=1
