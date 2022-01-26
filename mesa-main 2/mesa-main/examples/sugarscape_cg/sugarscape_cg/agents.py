@@ -176,7 +176,7 @@ class Criminal(Agent):
 
         #daily expenses
         self.wealth -= 20
-            
+
     
 
 class SsAgent(Agent):
@@ -400,15 +400,27 @@ class Cop(Agent):
         #direction = possible_moves_dict[sugar_per_move[0]]
 
         if self.pos[0] > direction[0]:
-            x_new = self.pos[0] - 1
+            if self.pos[0] - 2 >= 0:
+                x_new = self.pos[0] - 2
+            else:
+                x_new = self.pos[0] - 1
         elif self.pos[0] < direction[0]:
-            x_new = self.pos[0] + 1
-        else: 
+            if self.pos[0] + 2 < 50:
+                x_new = self.pos[0] + 2
+            else:
+                x_new = self.pos[0] + 1
+        else:
             x_new = self.pos[0]
         if self.pos[1] > direction[1]:
-            y_new = self.pos[1] - 1
+            if self.pos[1] - 2 >= 0:
+                y_new = self.pos[1] - 2
+            else:
+                y_new = self.pos[1] - 1
         elif self.pos[1] < direction[1]:
-            y_new = self.pos[1] + 1
+            if self.pos[1] + 2 < 50:
+                y_new = self.pos[1] + 2
+            else:
+                y_new = self.pos[1] + 1
         else:
             y_new = self.pos[1]
 
@@ -430,13 +442,13 @@ class Cop(Agent):
                 self.model.get_district((self.pos[0] + 1, self.pos[1])) == self.model.get_district(new_pos) 
                 ): # new district is to the right of the current district 
                 x_new = self.pos[0]
-            else:
-                print('WATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATKIFESH')
+            # else:
+                # print('WATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATKIFESH')
             new_pos = (x_new, y_new)
-            if self.model.get_district(new_pos) != self.model.get_district(self.pos):
-                print("new position not in same district",new_pos, self.model.get_district(new_pos))
-                print("direction of the intended move", direction, self.model.get_district(direction))
-                print("current position of cop",self.pos, self.model.get_district(self.pos))
+            # if self.model.get_district(new_pos) != self.model.get_district(self.pos):
+                # print("new position not in same district",new_pos, self.model.get_district(new_pos))
+                # print("direction of the intended move", direction, self.model.get_district(direction))
+                # print("current position of cop",self.pos, self.model.get_district(self.pos))
 
         if(self.police_here(new_pos)):
             self.random_cop_move()
@@ -471,4 +483,4 @@ class Cop(Agent):
             #if not yet in jail
             if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):
                 criminal_to_catch.wealth -= self.get_max_sugar(criminal_to_catch.pos)
-                criminal_to_catch.jail_time += 10
+                criminal_to_catch.jail_time += 5
