@@ -77,7 +77,7 @@ class Criminal(Agent):
         self.crimes_commited +=1
         sugar_patch.amount = 0
 
-    def get_utility(self, pos, a=1, b=1, c=1):
+    def get_utility(self, pos, a=1, b=1, c=0.3):
         wealth = self.get_wealth(pos)
         risk = self.get_risk(pos)
         distance = math.sqrt((pos[0] - self.pos[0]) ** 2 + (pos[1] - self.pos[1]) ** 2)
