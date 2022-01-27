@@ -124,7 +124,7 @@ class SugarscapeCg(Model):
         if self.verbose:
             print([self.schedule.time, self.schedule.get_breed_count()])
 
-    def run_model(self, step_count=200):
+    def run_model(self, step_count=300):
 
         if self.verbose:
             print(
