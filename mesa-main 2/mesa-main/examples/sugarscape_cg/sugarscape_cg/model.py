@@ -15,7 +15,7 @@ from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from sqlalchemy import true
 
-from .agents import SsAgent, Sugar, Cop, Criminal
+from .agents import Sugar, Cop, Criminal
 from .schedule import RandomActivationByBreed
 
 import os
@@ -41,7 +41,7 @@ class SugarscapeCg(Model):
     districts_in_deficit = []
     districts_in_surplus = []
 
-    def __init__(self, height=50, width=50, initial_population_criminals=45,initial_population_cops=40, search_radius=1, radius=1):
+    def __init__(self, height=50, width=50, initial_population_criminals=45, initial_population_cops=40, criminal_risk_radius=5, cop_catch_radius=1, jail_sentence=10, criminal_risk_aversion=100):
         """
         Create a new Constant Growback model with the given parameters.
 
@@ -52,16 +52,21 @@ class SugarscapeCg(Model):
         # Set parameters
         self.height = height
         self.width = width
+        self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50new.txt")
+
         self.initial_population_criminals = initial_population_criminals
         self.initial_population_cops = initial_population_cops
-        self.initial_wealth_distribution = np.genfromtxt(base_path + "/amsterdam50x50new.txt")
-        self.search_radius = search_radius
-        self.radius = radius
+
+        self.criminal_risk_radius = criminal_risk_radius
+        self.criminal_risk_aversion = criminal_risk_aversion
+
+        self.cop_catch_radius = cop_catch_radius
+        self.jail_sentence = jail_sentence
 
         self.schedule = RandomActivationByBreed(self)
         self.grid = MultiGrid(self.height, self.width, torus=False)
         self.datacollector = DataCollector(
-            {"Criminal Wealth": lambda m: m.schedule.get_breed_count(SsAgent),
+            {"Criminal Wealth": lambda m: m.schedule.get_breed_count(),
             "Criminal Count": lambda m: m.schedule.get_criminal_count(),
             "Criminal in Jail Count": lambda m:m.schedule.get_criminal_count_in_jail(),
             "Crimes commited": lambda m:m.schedule.get_crimes_commited(),
@@ -82,17 +87,6 @@ class SugarscapeCg(Model):
             self.grid.place_agent(sugar, (x, y))
             self.schedule.add(sugar)
 
-        # # Create agent:
-        # for i in range(self.initial_population_criminals):
-        #     x = self.random.randrange(self.width)
-        #     y = self.random.randrange(self.height)
-        #     sugar = self.random.randrange(6, 25)
-        #     metabolism = self.random.randrange(2, 4)
-        #     vision = self.random.randrange(1, 6)
-        #     ssa = SsAgent((x, y), self, False, sugar, metabolism, vision)
-        #     self.grid.place_agent(ssa, (x, y))
-        #     self.schedule.add(ssa)
-
         # Create agent:
         for i in range(self.initial_population_criminals):
             while(True):
@@ -101,9 +95,9 @@ class SugarscapeCg(Model):
                 if(self.get_district((x,y)) != "Undefined"):
                     break
             wealth = self.random.randrange(6, 25)
-            risk_tolerance = random.random()
-            # search_radius = 1
-            criminal = Criminal((x, y), self, random.randint(0, self.initial_population_criminals), True, wealth, risk_tolerance, self.search_radius)
+            risk_aversion = self.random.randrange(0, self.criminal_risk_aversion)
+
+            criminal = Criminal((x, y), self, random.randint(0, self.initial_population_criminals), moore=True, wealth=wealth, risk_aversion=risk_aversion, risk_radius=self.criminal_risk_radius)
             self.grid.place_agent(criminal, (x, y))
             self.schedule.add(criminal)
         
@@ -114,7 +108,7 @@ class SugarscapeCg(Model):
                 if(self.get_district((x,y)) != "Undefined"):
                     break
             #id = i = self.random.randrange(6, 25)
-            cop = Cop((x, y), self, self.radius)
+            cop = Cop((x, y), self, catch_radius=self.cop_catch_radius, jail_sentence=self.jail_sentence)
             self.grid.place_agent(cop, (x, y))
             self.schedule.add(cop)
             self.n_cops +=1
@@ -127,14 +121,14 @@ class SugarscapeCg(Model):
         # collect data
         self.datacollector.collect(self)
         if self.verbose:
-            print([self.schedule.time, self.schedule.get_breed_count(SsAgent)])
+            print([self.schedule.time, self.schedule.get_breed_count()])
 
     def run_model(self, step_count=200):
 
         if self.verbose:
             print(
                 "Initial number Sugarscape Agent: ",
-                self.schedule.get_breed_count(SsAgent),
+                self.schedule.get_breed_count(),
             )
 
         for i in range(step_count):
@@ -144,7 +138,7 @@ class SugarscapeCg(Model):
             print("")
             print(
                 "Final number Sugarscape Agent: ",
-                self.schedule.get_breed_count(SsAgent),
+                self.schedule.get_breed_count(),
             )
 
     def get_district(self, pos):

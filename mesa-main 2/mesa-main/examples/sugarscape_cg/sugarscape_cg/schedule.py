@@ -70,7 +70,7 @@ class RandomActivationByBreed(RandomActivation):
         for agent_key in agent_keys:
             self.agents_by_breed[breed][agent_key].step()
 
-    def get_breed_count(self, breed_class):
+    def get_breed_count(self):
         """
         Returns the current number of agents of certain breed in the queue.
         """

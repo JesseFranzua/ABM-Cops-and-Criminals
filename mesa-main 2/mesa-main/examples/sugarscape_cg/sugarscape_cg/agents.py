@@ -21,14 +21,14 @@ def get_distance(pos_1, pos_2):
 class Criminal(Agent):
     def __init__(
         self, pos, model, buddy_id=None, moore=True, wealth=100, 
-        risk_tolerance=0.5, search_radius=1, 
-        risk_radius=2, jail_time=0, crimes_commited=0, does_crime=False
+        risk_aversion=1, search_radius=1, 
+        risk_radius=5, jail_time=0, crimes_commited=0, does_crime=False
         ):
         super().__init__(pos, model)
 
         self.pos = pos
         self.wealth = wealth    
-        self.risk_tolerance = risk_tolerance
+        self.risk_aversion = risk_aversion
         self.search_radius = search_radius
         self.jail_time = jail_time
         self.moore = moore
@@ -58,7 +58,7 @@ class Criminal(Agent):
         risk = 0
         # district = self.model.get_district(pos)
         # district_risk = self.model.surveillance_levels[district]
-        max_radius = 5
+        max_radius = self.risk_radius
         neighbors = self.model.grid.get_neighbors(pos, self.moore, True, max_radius)
         for n in neighbors:
             if type(n) is Cop:
@@ -88,6 +88,7 @@ class Criminal(Agent):
 
         # print(f'a:{a*wealth} b:{b*risk} c:{c*distance} d:{d*own_wealth}')
         utility = a * wealth - b * district_risk * risk - c * distance - d * own_wealth
+        print(utility)
         return utility
 
 
@@ -115,7 +116,7 @@ class Criminal(Agent):
         # get the utility of the neighbor cells
         utility_scores = {}
         for cell in own_neighborhood:
-            utility_scores[cell] = self.get_utility(cell)
+            utility_scores[cell] = self.get_utility(cell, b=self.risk_aversion)
 
 
         # get the utility of the cells of the buddies --- if very slow, only do this if there is no positive utility in own area
@@ -130,7 +131,7 @@ class Criminal(Agent):
                             radius=self.search_radius
                         )
                         for cell in neighborhood:
-                            utility_scores[cell] = self.get_utility(cell)
+                            utility_scores[cell] = self.get_utility(cell, b=self.risk_aversion)
 
 
         # determine the cell with the highest utility
@@ -177,63 +178,6 @@ class Criminal(Agent):
         #daily expenses
         self.wealth -= 20
 
-    
-
-class SsAgent(Agent):
-    def __init__(self, pos, model, moore=False, sugar=0, metabolism=0, vision=0):
-        super().__init__(pos, model)
-        self.pos = pos
-        self.moore = moore
-        self.sugar = sugar
-        self.metabolism = metabolism
-        self.vision = vision
-
-    def get_sugar(self, pos):
-        this_cell = self.model.grid.get_cell_list_contents([pos])
-        for agent in this_cell:
-            if type(agent) is Sugar:
-                return agent
-
-    def is_occupied(self, pos):
-        this_cell = self.model.grid.get_cell_list_contents([pos])
-        return len(this_cell) > 1
-
-    def move(self):
-        # Get neighborhood within vision
-        neighbors = [
-            i
-            for i in self.model.grid.get_neighborhood(
-                self.pos, self.moore, False, radius=self.vision
-            )
-            if not self.is_occupied(i)
-        ]
-        neighbors.append(self.pos)
-        # Look for location with the most sugar
-        max_sugar = max(self.get_sugar(pos).amount for pos in neighbors)
-        candidates = [
-            pos for pos in neighbors if self.get_sugar(pos).amount == max_sugar
-        ]
-        # Narrow down to the nearest ones
-        min_dist = min(get_distance(self.pos, pos) for pos in candidates)
-        final_candidates = [
-            pos for pos in candidates if get_distance(self.pos, pos) == min_dist
-        ]
-        self.random.shuffle(final_candidates)
-        self.model.grid.move_agent(self, final_candidates[0])
-
-    def eat(self):
-        sugar_patch = self.get_sugar(self.pos)
-        self.sugar = self.sugar - self.metabolism + sugar_patch.amount
-        sugar_patch.amount = 0
-
-    def step(self):
-        self.move()
-        self.eat()
-        if self.sugar <= 0:
-            self.model.grid._remove_agent(self.pos, self)
-            self.model.schedule.remove(self)
-
-
 class Sugar(Agent):
     def __init__(self, pos, model, max_sugar):
         super().__init__(pos, model)
@@ -244,10 +188,11 @@ class Sugar(Agent):
         self.amount = self.max_sugar
 
 class Cop(Agent):
-    def __init__(self, pos ,model, radius=1, id = np.random.random(), cop_stays_in_district=0,surveillance_radius=1):
+    def __init__(self, pos ,model, catch_radius=1, jail_sentence=10, id = np.random.random(), cop_stays_in_district=0, surveillance_radius=1):
         super().__init__(pos, model)
         self.pos = pos
-        self.radius = radius
+        self.catch_radius = catch_radius
+        self.jail_sentence = jail_sentence
         self.id = id
         self.cop_stays_in_district = cop_stays_in_district
         self.surveillance_radius = surveillance_radius
@@ -367,14 +312,14 @@ class Cop(Agent):
             return new_district, (x_new, y_new), 'yes'
 
     def random_cop_move(self):
-        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=self.radius)
+        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=1)
         # delete options outside the city part
         for index, move in enumerate(possible_moves):
             if self.model.get_district(move) != self.model.get_district(self.pos):
                 del possible_moves[index]
         new_pos = random.choice(possible_moves)
         self.model.grid.move_agent(self, new_pos)
-        self.catch_criminal(1)        
+        self.catch_criminal(self.catch_radius)        
     
     def move_to_crime(self):
         # get moves in a large radius, delete those outside district, select the one with the lowest sugar
@@ -442,19 +387,14 @@ class Cop(Agent):
                 self.model.get_district((self.pos[0] + 1, self.pos[1])) == self.model.get_district(new_pos) 
                 ): # new district is to the right of the current district 
                 x_new = self.pos[0]
-            # else:
-                # print('WATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATWATKIFESH')
+
             new_pos = (x_new, y_new)
-            # if self.model.get_district(new_pos) != self.model.get_district(self.pos):
-                # print("new position not in same district",new_pos, self.model.get_district(new_pos))
-                # print("direction of the intended move", direction, self.model.get_district(direction))
-                # print("current position of cop",self.pos, self.model.get_district(self.pos))
 
         if(self.police_here(new_pos)):
             self.random_cop_move()
         else:
             self.model.grid.move_agent(self, new_pos)
-            self.catch_criminal(1)   
+            self.catch_criminal(self.catch_radius)   
 
     def police_here(self,pos):
         this_cell = self.model.grid.get_cell_list_contents([pos])
@@ -475,12 +415,12 @@ class Cop(Agent):
             if type(agent) is Sugar:
                 return int(agent.amount)     
 
-    def catch_criminal(self, city_part_surveillance):
-        neighbors = self.model.grid.get_neighbors(self.pos, moore=True,include_center=True, radius=city_part_surveillance)
+    def catch_criminal(self, catch_radius):
+        neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True, radius=catch_radius)
         catchable_criminals = [obj for obj in neighbors if isinstance(obj, Criminal)]
         if len(catchable_criminals) > 0:
             criminal_to_catch = self.random.choice(catchable_criminals)         
             #if not yet in jail
             if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):
                 criminal_to_catch.wealth -= self.get_max_sugar(criminal_to_catch.pos)
-                criminal_to_catch.jail_time += 5
+                criminal_to_catch.jail_time += self.jail_sentence

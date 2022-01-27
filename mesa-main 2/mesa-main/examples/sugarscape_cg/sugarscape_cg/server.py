@@ -1,7 +1,7 @@
 from mesa.visualization.ModularVisualization import ModularServer
 from mesa.visualization.modules import CanvasGrid, ChartModule
 
-from .agents import SsAgent, Sugar, Cop, Criminal
+from .agents import Sugar, Cop, Criminal
 from .model import SugarscapeCg
 
 from matplotlib import cm
