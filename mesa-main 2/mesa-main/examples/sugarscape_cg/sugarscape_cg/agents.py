@@ -77,7 +77,7 @@ class Criminal(Agent):
         self.crimes_commited +=1
         sugar_patch.amount = 0
 
-    def get_utility(self, pos, a=1, b=1, c=0, d=0):
+    def get_utility(self, pos, a=1, b=1, c=1):
         wealth = self.get_wealth(pos)
         risk = self.get_risk(pos)
         distance = math.sqrt((pos[0] - self.pos[0]) ** 2 + (pos[1] - self.pos[1]) ** 2)
@@ -85,6 +85,11 @@ class Criminal(Agent):
         own_wealth = self.wealth
         district = self.model.get_district(pos)
         district_risk = self.model.surveillance_levels[district]
+
+        if own_wealth < 0:
+            d = 0.5  # if your own wealth is negative you're more likely to commit crimes
+        else:
+            d = 0.01
 
         # print(f'a:{a*wealth} b:{b*risk} c:{c*distance} d:{d*own_wealth}')
         utility = a * wealth - b * district_risk * risk - c * distance - d * own_wealth
