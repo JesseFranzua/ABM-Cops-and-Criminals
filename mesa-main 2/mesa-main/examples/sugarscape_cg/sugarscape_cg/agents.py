@@ -93,7 +93,7 @@ class Criminal(Agent):
 
         # print(f'a:{a*wealth} b:{b*risk} c:{c*distance} d:{d*own_wealth}')
         utility = a * wealth - b * district_risk * risk - c * distance - d * own_wealth
-        print(utility)
+        # print(utility)
         return utility
 
 
