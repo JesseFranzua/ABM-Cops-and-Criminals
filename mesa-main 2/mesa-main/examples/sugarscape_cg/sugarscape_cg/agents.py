@@ -193,7 +193,7 @@ class Sugar(Agent):
         self.amount = self.max_sugar
 
 class Cop(Agent):
-    def __init__(self, pos ,model, catch_radius=1, jail_sentence=10, id = np.random.random(), cop_stays_in_district=0, surveillance_radius=1):
+    def __init__(self, pos, model, catch_radius=1, jail_sentence=10, id = np.random.random(), cop_stays_in_district=0, surveillance_radius=1):
         super().__init__(pos, model)
         self.pos = pos
         self.catch_radius = catch_radius

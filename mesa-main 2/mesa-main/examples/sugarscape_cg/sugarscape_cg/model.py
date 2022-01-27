@@ -41,7 +41,7 @@ class SugarscapeCg(Model):
     districts_in_deficit = []
     districts_in_surplus = []
 
-    def __init__(self, height=50, width=50, initial_population_criminals=45, initial_population_cops=40, criminal_risk_radius=5, cop_catch_radius=1, jail_sentence=10, criminal_risk_aversion=100):
+    def __init__(self, height=50, width=50, initial_population_criminals=45, initial_population_cops=40, criminal_risk_radius=5, cop_catch_radius=1, jail_sentence=10, criminal_risk_aversion=100, criminal_disconnectivity=45):
         """
         Create a new Constant Growback model with the given parameters.
 
@@ -59,6 +59,7 @@ class SugarscapeCg(Model):
 
         self.criminal_risk_radius = criminal_risk_radius
         self.criminal_risk_aversion = criminal_risk_aversion
+        self.criminal_disconnectivity = criminal_disconnectivity
 
         self.cop_catch_radius = cop_catch_radius
         self.jail_sentence = jail_sentence
@@ -97,7 +98,7 @@ class SugarscapeCg(Model):
             wealth = self.random.randrange(6, 25)
             risk_aversion = self.random.randrange(0, self.criminal_risk_aversion)
 
-            criminal = Criminal((x, y), self, random.randint(0, self.initial_population_criminals), moore=True, wealth=wealth, risk_aversion=risk_aversion, risk_radius=self.criminal_risk_radius)
+            criminal = Criminal((x, y), self, buddy_id=random.randint(0, self.criminal_disconnectivity), moore=True, wealth=wealth, risk_aversion=risk_aversion, risk_radius=self.criminal_risk_radius)
             self.grid.place_agent(criminal, (x, y))
             self.schedule.add(criminal)
         
