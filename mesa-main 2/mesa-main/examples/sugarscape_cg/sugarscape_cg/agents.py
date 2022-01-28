@@ -390,7 +390,7 @@ class Cop(Agent):
         #     print("direction : ", direction)
 
         if self.model.get_district(new_pos) != self.model.get_district(self.pos):
-            if (self.pos[0] - 1 >= 0 or self.pos[1] - 1 >= 0) or (self.pos[0] + 1 <= 49 or self.pos[1] + 1 <= 49):
+            if (self.pos[0] - 1 >= 0 and self.pos[1] - 1 >= 0) and (self.pos[0] + 1 <= 49 and self.pos[1] + 1 <= 49):
                 if (self.model.get_district((self.pos[0], self.pos[1] - 1)) != self.model.get_district(self.pos)) and (
                     self.model.get_district((self.pos[0], self.pos[1] - 1)) == self.model.get_district(new_pos)
                     ): # new district is below current district
