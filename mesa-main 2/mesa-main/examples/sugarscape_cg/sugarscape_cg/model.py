@@ -30,7 +30,7 @@ class SugarscapeCg(Model):
     Sugarscape 2 Constant Growback
     """
 
-    verbose = True  # Print-monitoring
+    verbose = False  # Print-monitoring
 
     n_cops = 0  
     cops_that_stepped = 0
@@ -124,7 +124,7 @@ class SugarscapeCg(Model):
         if self.verbose:
             print([self.schedule.time, self.schedule.get_breed_count()])
 
-    def run_model(self, step_count=300):
+    def run_model(self, step_count=200):
 
         if self.verbose:
             print(
@@ -153,6 +153,7 @@ class SugarscapeCg(Model):
         """
         x = pos[0]
         y = pos[1]
+
         initial_wealth = self.initial_wealth_distribution[x][y]
 
         if initial_wealth == 28.0:
