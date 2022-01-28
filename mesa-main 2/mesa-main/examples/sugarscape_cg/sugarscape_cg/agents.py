@@ -76,6 +76,7 @@ class Criminal(Agent):
         self.wealth += sugar_patch.amount
         self.crimes_commited +=1
         sugar_patch.amount = 0
+        sugar_patch.steps_since_crime = 2
 
     def get_utility(self, pos, a=1, b=1, c=0.3):
         wealth = self.get_wealth(pos)
@@ -184,13 +185,18 @@ class Criminal(Agent):
         self.wealth -= 20
 
 class Sugar(Agent):
-    def __init__(self, pos, model, max_sugar):
+    def __init__(self, pos, model, max_sugar, steps_since_crime):
         super().__init__(pos, model)
         self.amount = max_sugar
         self.max_sugar = max_sugar
+        self.steps_since_crime = steps_since_crime
 
     def step(self):
-        self.amount = self.max_sugar
+        if self.steps_since_crime > 0:
+            self.amount = self.max_sugar - 1
+            self.steps_since_crime -= 1
+        else:
+            self.amount = self.max_sugar
 
 class Cop(Agent):
     def __init__(self, pos, model, catch_radius=1, jail_sentence=10, id = np.random.random(), cop_stays_in_district=0, surveillance_radius=1):
@@ -375,25 +381,31 @@ class Cop(Agent):
             y_new = self.pos[1]
 
         new_pos = (x_new, y_new)
-        if self.model.get_district(new_pos) != self.model.get_district(self.pos):
-            if (self.model.get_district((self.pos[0], self.pos[1] - 1)) != self.model.get_district(self.pos)) and (
-                self.model.get_district((self.pos[0], self.pos[1] - 1)) == self.model.get_district(new_pos)
-                ): # new district is below current district
-                y_new = self.pos[1]
-            elif (self.model.get_district((self.pos[0], self.pos[1] + 1)) != self.model.get_district(self.pos)) and (
-                self.model.get_district((self.pos[0], self.pos[1] + 1)) == self.model.get_district(new_pos)
-                ): # new district is above current district
-                y_new = self.pos[1]
-            elif (self.model.get_district((self.pos[0] - 1, self.pos[1])) != self.model.get_district(self.pos)) and (
-                self.model.get_district((self.pos[0] - 1, self.pos[1])) == self.model.get_district(new_pos)
-                ): # new district is to the left of the current district 
-                x_new = self.pos[0]
-            elif (self.model.get_district((self.pos[0] + 1, self.pos[1])) != self.model.get_district(self.pos)) and (
-                self.model.get_district((self.pos[0] + 1, self.pos[1])) == self.model.get_district(new_pos) 
-                ): # new district is to the right of the current district 
-                x_new = self.pos[0]
+        # if (self.pos[0] == 0 or self.pos[0] == 49) or (self.pos[1] == 0 or self.pos[1] == 49):
+        #     print("self.pos : ", self.pos)
+        #     print("new_pos : ", new_pos)
+        #     print("direction : ", direction)
 
-            new_pos = (x_new, y_new)
+        if self.model.get_district(new_pos) != self.model.get_district(self.pos):
+            if (self.pos[0] - 1 >= 0 or self.pos[1] - 1 >= 0) or (self.pos[0] + 1 <= 49 or self.pos[1] + 1 <= 49):
+                if (self.model.get_district((self.pos[0], self.pos[1] - 1)) != self.model.get_district(self.pos)) and (
+                    self.model.get_district((self.pos[0], self.pos[1] - 1)) == self.model.get_district(new_pos)
+                    ): # new district is below current district
+                    y_new = self.pos[1]
+                elif (self.model.get_district((self.pos[0], self.pos[1] + 1)) != self.model.get_district(self.pos)) and (
+                    self.model.get_district((self.pos[0], self.pos[1] + 1)) == self.model.get_district(new_pos)
+                    ): # new district is above current district
+                    y_new = self.pos[1]
+                elif (self.model.get_district((self.pos[0] - 1, self.pos[1])) != self.model.get_district(self.pos)) and (
+                    self.model.get_district((self.pos[0] - 1, self.pos[1])) == self.model.get_district(new_pos)
+                    ): # new district is to the left of the current district
+                    x_new = self.pos[0]
+                elif (self.model.get_district((self.pos[0] + 1, self.pos[1])) != self.model.get_district(self.pos)) and (
+                    self.model.get_district((self.pos[0] + 1, self.pos[1])) == self.model.get_district(new_pos)
+                    ): # new district is to the right of the current district
+                    x_new = self.pos[0]
+
+                new_pos = (x_new, y_new)
 
         if(self.police_here(new_pos)):
             self.random_cop_move()

@@ -84,7 +84,7 @@ class SugarscapeCg(Model):
         sugar_distribution = np.genfromtxt(base_path + "/amsterdam50x50new.txt")
         for _, x, y in self.grid.coord_iter():
             max_sugar = sugar_distribution[x, y]
-            sugar = Sugar((x, y), self, max_sugar)
+            sugar = Sugar((x, y), self, max_sugar, steps_since_crime=0)
             self.grid.place_agent(sugar, (x, y))
             self.schedule.add(sugar)
 
