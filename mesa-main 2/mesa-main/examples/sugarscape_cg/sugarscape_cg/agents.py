@@ -220,22 +220,25 @@ class Cop(Agent):
     def distribute_cops(self, crime_rates, current_distr):
         # this functions tells the step function how many cops have to switch city parts
         # assume crite_rates is a dictionary with the number of crimes per city part, eg: dict = {'zuid': 42, 'oost': 32, 'noord': 50, 'west': 1000}
-        total_crime = np.sum([i for i in crime_rates.values()])
-        nd_unrounded = {key: self.model.n_cops * value / total_crime for key, value in crime_rates.items()}
-        nd_decimals = {key: value - math.floor(value) for key, value in nd_unrounded.items()}
+        if np.sum([i for i in crime_rates.values()]) > 0:
+            total_crime = np.sum([i for i in crime_rates.values()])
+            nd_unrounded = {key: self.model.n_cops * value / total_crime for key, value in crime_rates.items()}
+            nd_decimals = {key: value - math.floor(value) for key, value in nd_unrounded.items()}
 
-        cops_left = self.model.n_cops - np.sum([math.floor(i) for i in nd_unrounded.values()])
-        new_distribution = {}
-        while cops_left > 0:
-            for key, value in nd_unrounded.items():
-                if nd_decimals[key] - math.floor(nd_decimals[key]) == max(nd_decimals.values()):
-                    new_distribution[key] = math.ceil(nd_unrounded[key])
-                    nd_decimals[key] = 0
-                    cops_left -= 1
-        for key in nd_decimals.keys():
-            new_distribution[key] = math.floor(nd_unrounded[key])
-        
-        return {key: value - current_distr[key] for key, value in new_distribution.items()}
+            cops_left = self.model.n_cops - np.sum([math.floor(i) for i in nd_unrounded.values()])
+            new_distribution = {}
+            while cops_left > 0:
+                for key, value in nd_unrounded.items():
+                    if nd_decimals[key] - math.floor(nd_decimals[key]) == max(nd_decimals.values()):
+                        new_distribution[key] = math.ceil(nd_unrounded[key])
+                        nd_decimals[key] = 0
+                        cops_left -= 1
+            for key in nd_decimals.keys():
+                new_distribution[key] = math.floor(nd_unrounded[key])
+
+            return {key: value - current_distr[key] for key, value in new_distribution.items()}
+        else:
+            return current_distr
 
     def step(self):
         # when the first cop each step is asked to move, calculate the the distribution 
