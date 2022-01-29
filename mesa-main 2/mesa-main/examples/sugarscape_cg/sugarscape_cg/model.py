@@ -105,9 +105,17 @@ class SugarscapeCg(Model):
                 if(self.get_district((x,y)) != "Undefined"):
                     break
             wealth = self.random.randrange(6, 25)
-            risk_aversion = self.random.randrange(0, self.criminal_risk_aversion)
+            if self.criminal_risk_aversion == 0:
+                risk_aversion = 0
+            else:
+                risk_aversion = self.random.randrange(0, self.criminal_risk_aversion)
 
-            criminal = Criminal((x, y), self, buddy_id=random.randint(0, self.criminal_disconnectivity), moore=True, wealth=wealth, risk_aversion=risk_aversion, risk_radius=self.criminal_risk_radius)
+            if self.criminal_disconnectivity == 0:
+                buddy_id = 0
+            else:
+                buddy_id=random.randint(0, self.criminal_disconnectivity)
+
+            criminal = Criminal((x, y), self, buddy_id=buddy_id, moore=True, wealth=wealth, risk_aversion=risk_aversion, risk_radius=self.criminal_risk_radius)
             self.grid.place_agent(criminal, (x, y))
             self.schedule.add(criminal)
         
@@ -227,7 +235,7 @@ class SugarscapeCg(Model):
         return districts_crimes_dict
     
     def update_average_crimes_per_district(self,district):
-        burn_in_period = 50
+        burn_in_period = 100
         if self.schedule.time > burn_in_period:
             crimes_current_step = self.get_crimes_per_district()
             print(crimes_current_step)
