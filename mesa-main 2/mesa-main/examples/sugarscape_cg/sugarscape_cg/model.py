@@ -15,8 +15,8 @@ from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from sqlalchemy import true
 
-from .agents import Sugar, Cop, Criminal
-from .schedule import RandomActivationByBreed
+from agents import Sugar, Cop, Criminal
+from schedule import RandomActivationByBreed
 
 import os
 import random
@@ -238,7 +238,7 @@ class SugarscapeCg(Model):
         burn_in_period = 100
         if self.schedule.time > burn_in_period:
             crimes_current_step = self.get_crimes_per_district()
-            print(crimes_current_step)
+            # print(crimes_current_step)
             self.total_crimes_per_district[district] *= (self.schedule.time-1) - burn_in_period
             self.total_crimes_per_district[district] += crimes_current_step[district]
             self.total_crimes_per_district[district] /= (self.schedule.time) - burn_in_period

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from mesa.time import RandomActivation
 
-from .agents import Criminal
+from agents import Criminal
 
 class RandomActivationByBreed(RandomActivation):
     """
