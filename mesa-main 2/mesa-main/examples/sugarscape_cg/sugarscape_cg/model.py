@@ -40,6 +40,8 @@ class SugarscapeCg(Model):
     # surveillance_levels ={'Centrum': 3, 'Nieuw-West': 1, 'Noord': 2, 'Oost': 2, 'West': 2, 'Westpoort': 1, 'Zuid': 2, 'Zuidoost': 2, 'Undefined':0}
     districts_in_deficit = []
     districts_in_surplus = []
+    total_crimes_per_district = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
+    
 
     def __init__(self, height=50, width=50, initial_population_criminals=45, initial_population_cops=40, criminal_risk_radius=5, cop_catch_radius=1, jail_sentence=10, criminal_risk_aversion=100, criminal_disconnectivity=45):
         """
@@ -77,7 +79,14 @@ class SugarscapeCg(Model):
             "Zuid": lambda m:m.schedule.get_crimes_per_timestep().get("Zuid"),
             "Zuidoost": lambda m:m.schedule.get_crimes_per_timestep().get("Zuidoost"),
             "Oost": lambda m:m.schedule.get_crimes_per_timestep().get("Oost"),
-            "Nieuw-West": lambda m:m.schedule.get_crimes_per_timestep().get("Nieuw-West")}
+            "Nieuw-West": lambda m:m.schedule.get_crimes_per_timestep().get("Nieuw-West"),
+            "Centrum_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Centrum").get("Centrum"),
+            "Noord_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Noord").get("Noord"),
+            "West_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("West").get("West"),
+            "Zuid_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Zuid").get("Zuid"),
+            "Zuidoost_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Zuidoost").get("Zuidoost"),
+            "Oost_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Oost").get("Oost"),
+            "Nieuw-West_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Nieuw-West").get("Nieuw-West")}
         )
 
         # Create sugar
@@ -194,6 +203,7 @@ class SugarscapeCg(Model):
 
         return districts_dict
 
+    
     def get_crimes_per_district(self):
         """Get count of agents per district.
  
@@ -204,7 +214,6 @@ class SugarscapeCg(Model):
         :return: dictionary with district names as keys and respective counts of agent_type
         """
         districts_crimes_dict = {}
-        
         for agents, x, y in self.grid.coord_iter():
             district = self.get_district((x, y))
             if district not in districts_crimes_dict.keys():
@@ -216,3 +225,14 @@ class SugarscapeCg(Model):
                     #districts_crimes_dict[district] += agent.crimes_commited
 
         return districts_crimes_dict
+    
+    def update_average_crimes_per_district(self,district):
+        burn_in_period = 50
+        if self.schedule.time > burn_in_period:
+            crimes_current_step = self.get_crimes_per_district()
+            print(crimes_current_step)
+            self.total_crimes_per_district[district] *= (self.schedule.time-1) - burn_in_period
+            self.total_crimes_per_district[district] += crimes_current_step[district]
+            self.total_crimes_per_district[district] /= (self.schedule.time) - burn_in_period
+        return self.total_crimes_per_district
+        

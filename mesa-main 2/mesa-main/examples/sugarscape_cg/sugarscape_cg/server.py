@@ -65,10 +65,12 @@ chart_element3 = ChartModule([{"Label": "Criminal in Jail Count", "Color": "#AA0
 chart_element4 = ChartModule([{"Label": "Crimes commited", "Color": "#AA0000"}])
 chart_element5 = ChartModule([{"Label": "Centrum", "Color": "#eb534b"},{"Label": "Noord", "Color": "#34b7eb"},{"Label": "West", "Color": "#40943d"},{"Label": "Nieuw-West", "Color": "#ffc0cb"},{"Label": "Zuid", "Color": "#ebc934"},{"Label": "Oost", "Color": "#50d950"},
 {"Label": "Zuidoost", "Color": "#800080"}])
+chart_element6 = ChartModule([{"Label": "Centrum_Avg", "Color": "#eb534b"},{"Label": "Noord_Avg", "Color": "#34b7eb"},{"Label": "West_Avg", "Color": "#40943d"},{"Label": "Nieuw-West_Avg", "Color": "#ffc0cb"},{"Label": "Zuid_Avg", "Color": "#ebc934"},{"Label": "Oost_Avg", "Color": "#50d950"},
+{"Label": "Zuidoost_Avg", "Color": "#800080"}])
 
 
 
 server = ModularServer(
-    SugarscapeCg, [canvas_element, chart_element,chart_element3,chart_element4,chart_element5], "Criminals versus Cops Amsterdam"
+    SugarscapeCg, [canvas_element, chart_element,chart_element3,chart_element4,chart_element5,chart_element6], "Criminals versus Cops Amsterdam"
 )
 # server.launch()

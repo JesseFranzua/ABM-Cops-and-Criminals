@@ -101,5 +101,8 @@ class RandomActivationByBreed(RandomActivation):
     
     def get_crimes_per_timestep(self):
         return self.model.get_crimes_per_district()
+    
+    def update_average_crimes_per_timestep(self,district):
+        return self.model.update_average_crimes_per_district(district)
 
     
