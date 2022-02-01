@@ -40,7 +40,7 @@ class SugarscapeCg(Model):
     # surveillance_levels ={'Centrum': 3, 'Nieuw-West': 1, 'Noord': 2, 'Oost': 2, 'West': 2, 'Westpoort': 1, 'Zuid': 2, 'Zuidoost': 2, 'Undefined':0}
     districts_in_deficit = []
     districts_in_surplus = []
-    total_crimes_per_district = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
+    # total_crimes_per_district = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
     
 
     def __init__(self, height=50, width=50, initial_population_criminals=45, initial_population_cops=40, criminal_risk_radius=5, cop_catch_radius=1, jail_sentence=10, criminal_risk_aversion=100, criminal_disconnectivity=45):
@@ -88,6 +88,8 @@ class SugarscapeCg(Model):
             "Oost_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Oost").get("Oost"),
             "Nieuw-West_Avg": lambda m:m.schedule.update_average_crimes_per_timestep("Nieuw-West").get("Nieuw-West")}
         )
+
+        self.total_crimes_per_district = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
 
         # Create sugar
         sugar_distribution = np.genfromtxt(base_path + "/amsterdam50x50new.txt")
@@ -141,7 +143,7 @@ class SugarscapeCg(Model):
         if self.verbose:
             print([self.schedule.time, self.schedule.get_breed_count()])
 
-    def run_model(self, step_count=200):
+    def run_model(self, step_count=300):
 
         if self.verbose:
             print(
@@ -243,4 +245,3 @@ class SugarscapeCg(Model):
             self.total_crimes_per_district[district] += crimes_current_step[district]
             self.total_crimes_per_district[district] /= (self.schedule.time) - burn_in_period
         return self.total_crimes_per_district
-        
