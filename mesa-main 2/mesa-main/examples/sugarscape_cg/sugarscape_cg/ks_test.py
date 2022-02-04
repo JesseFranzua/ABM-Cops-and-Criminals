@@ -24,3 +24,4 @@ plt.show()
 test = stats.kstest(avg_per_district, zipf_list) 
 print(test)
 # if p-value is low, reject null-hypothesis that they are identical
+#test
