@@ -82,9 +82,15 @@ class RandomActivationByBreed(RandomActivation):
         #return len(self.agents_by_breed[breed_class].values())
 
     def get_criminal_count(self):
+        """
+        Return the number of criminals on the grid.
+        """
         return len(self.agents_by_breed[Criminal].values())
 
     def get_criminal_count_in_jail(self):
+        """ 
+        Returns the number of criminals currently in jail.
+        """
         count = 0
         for agent in self.model.schedule.agents:
             if type(agent) is Criminal:
@@ -93,6 +99,9 @@ class RandomActivationByBreed(RandomActivation):
         return count
 
     def get_crimes_commited(self):
+        """
+        Returns the total number of crimes committed.
+        """
         count = 0
         for agent in self.model.schedule.agents:
             if type(agent) is Criminal:
@@ -100,9 +109,15 @@ class RandomActivationByBreed(RandomActivation):
         return count
     
     def get_crimes_per_timestep(self):
+        """
+        Returns the number of crimes committed in the current timestep.
+        """
         return self.model.get_crimes_per_district()
     
     def update_average_crimes_per_timestep(self,district):
+        """
+        Update the average crimes of a district.
+        """
         return self.model.update_average_crimes_per_district(district)
 
     

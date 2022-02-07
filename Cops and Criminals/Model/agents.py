@@ -38,6 +38,9 @@ class Criminal(Agent):
         self.buddy_id = buddy_id
     
     def get_sugar(self, pos):
+        """
+        Returns the sugar class present on a given position
+        """
         this_cell = self.model.grid.get_cell_list_contents([pos])
         for agent in this_cell:
             if type(agent) is Sugar:
@@ -53,11 +56,8 @@ class Criminal(Agent):
     def get_risk(self, pos):
         """
         Returns the risk in a given cell
-        TODO: determine risk_radius and risk per cop
         """
         risk = 0
-        # district = self.model.get_district(pos)
-        # district_risk = self.model.surveillance_levels[district]
         max_radius = self.risk_radius
         neighbors = self.model.grid.get_neighbors(pos, self.moore, True, max_radius)
         for n in neighbors:
@@ -92,9 +92,7 @@ class Criminal(Agent):
         else:
             d = 0.01
 
-        # print(f'a:{a*wealth} b:{b*risk} c:{c*distance} d:{d*own_wealth}')
         utility = a * wealth - b * district_risk * risk - c * distance - d * own_wealth
-        # print(utility)
         return utility
 
 
@@ -125,7 +123,7 @@ class Criminal(Agent):
             utility_scores[cell] = self.get_utility(cell, b=self.risk_aversion)
 
 
-        # get the utility of the cells of the buddies --- if very slow, only do this if there is no positive utility in own area
+        # get the utility of the cells of the buddies
         for agents, x, y in self.model.grid.coord_iter():
             for agent in agents:
                 if type(agent) is Criminal and (x, y) != self.pos:
@@ -139,9 +137,7 @@ class Criminal(Agent):
                         for cell in neighborhood:
                             utility_scores[cell] = self.get_utility(cell, b=self.risk_aversion)
 
-
         # determine the cell with the highest utility
-        # print(f'Utility scores: {utility_scores}')
         highest_utility = max(utility_scores.values())
         possible_targets = [
             cell  
@@ -170,7 +166,6 @@ class Criminal(Agent):
                 y_new = self.pos[1]
             target_cell = (x_new, y_new)
           
-
         # move to the target cell
         self.model.grid.move_agent(self, target_cell)
 

@@ -10,7 +10,10 @@ from matplotlib.colors import rgb2hex, ListedColormap
 # colors = cm.get_cmap('inferno', 50) # 50 colors out of inferno cmap
 
 # district_names = ['Centrum', 'Noord', 'West', 'Zuid', 'Zuidoost', 'Oost', 'Nieuw-West']
+
+# colors of the grid
 color_dic = {44: '#eb534b', 28: '#34b7eb', 36: '#40943d', 49: '#ebc934', 25: '#800080', 37: '#50d950', 29: '#ffc0cb'}
+
 # colors = ListedColormap(district_colors)
 
 # hex_codes = []
@@ -28,16 +31,21 @@ color_dic = {44: '#eb534b', 28: '#34b7eb', 36: '#40943d', 49: '#ebc934', 25: '#8
 
 
 def SsAgent_portrayal(agent):
+    """
+    Function that handles the display of the cops and criminals.
+    """
     if agent is None:
         return
 
     portrayal = {}
 
+    # display the criminals
     if type(agent) is Criminal:
         portrayal["Shape"] = "resources/criminal.png"
         portrayal["scale"] = 0.9
         portrayal["Layer"] = 1
     
+    # display the cops
     elif type(agent) is Cop:
         portrayal["Shape"] = "resources/cop.png"
         portrayal["scale"] = 0.9
