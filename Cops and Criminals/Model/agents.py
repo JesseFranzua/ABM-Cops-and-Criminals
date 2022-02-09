@@ -188,7 +188,7 @@ class Sugar(Agent):
 
     def step(self):
         if self.steps_since_crime > 0:
-            self.amount = self.max_sugar - 1
+            self.amount = self.max_sugar - 2
             self.steps_since_crime -= 1
         else:
             self.amount = self.max_sugar

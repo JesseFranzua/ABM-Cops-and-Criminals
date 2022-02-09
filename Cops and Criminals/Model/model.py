@@ -215,13 +215,10 @@ class SugarscapeCg(Model):
 
     
     def get_crimes_per_district(self):
-        """Get count of agents per district.
- 
-        :param agent_type: Cop or Criminal to be counted
-        :type agent_type: class
+        """Get count of crimes per district.
         
         :rtype: dict
-        :return: dictionary with district names as keys and respective counts of agent_type
+        :return: dictionary with district names as keys and respective counts of crimes
         """
         districts_crimes_dict = {}
         for agents, x, y in self.grid.coord_iter():
