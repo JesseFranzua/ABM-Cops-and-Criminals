@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
-
+import pickle
 
 def zipf(height):
     """
@@ -13,8 +13,12 @@ def zipf(height):
     x = np.linspace(0, 6, 1000)
     return x, y
 
+with open('experiment_outputs/avg_crr_2.pkl', 'rb') as f:
+    output = pickle.load(f)
+
+
 # average crimes eyeballed from default run
-avg_per_district =[1.8, 2.4, 2.5, 3, 3.8, 4.5, 6.1]
+avg_per_district = list(output.values())
 x_avg = np.linspace(0, 1, len(avg_per_district))
 
 # values follwoing zipf law with same max
