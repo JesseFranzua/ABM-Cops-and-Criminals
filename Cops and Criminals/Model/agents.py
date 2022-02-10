@@ -301,7 +301,9 @@ class Cop(Agent):
 
     def step(self):
         """
-        
+        When the first cop each step is asked to move, 
+        calculate the the distribution 
+        causes tango
         """
   
         current_district = self.model.get_district(self.pos)
