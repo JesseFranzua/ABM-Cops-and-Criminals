@@ -19,6 +19,9 @@ def get_distance(pos_1, pos_2):
     return math.sqrt(dx ** 2 + dy ** 2)
 
 class Criminal(Agent):
+    """
+    Class to control the Criminal agent.
+    """
     def __init__(
         self, pos, model, buddy_id=None, moore=True, wealth=100, 
         risk_aversion=1, search_radius=1, 
@@ -59,7 +62,12 @@ class Criminal(Agent):
         """
         risk = 0
         max_radius = self.risk_radius
-        neighbors = self.model.grid.get_neighbors(pos, self.moore, True, max_radius)
+        neighbors = self.model.grid.get_neighbors(
+            pos, 
+            self.moore, 
+            True, 
+            max_radius
+        )
         for n in neighbors:
             if type(n) is Cop:
                 distance = get_distance(pos, n.pos)
@@ -79,20 +87,32 @@ class Criminal(Agent):
         sugar_patch.steps_since_crime = 2
 
     def get_utility(self, pos, a=1, b=1, c=0.3):
+        """
+        Return the utility of a cell based on 
+        the wealth, the risk, the distance, and the criminal's own wealth.
+        """
         wealth = self.get_wealth(pos)
         risk = self.get_risk(pos)
-        distance = math.sqrt((pos[0] - self.pos[0]) ** 2 + (pos[1] - self.pos[1]) ** 2)
-        distance = 0 if distance < 2 else distance # dont discriminate between cells in direct neighborhood
+        distance = math.sqrt(
+            (pos[0] - self.pos[0]) ** 2 + (pos[1] - self.pos[1]) ** 2
+            )
+        distance = 0 if distance < 2 else distance 
         own_wealth = self.wealth
         district = self.model.get_district(pos)
         district_risk = self.model.surveillance_levels[district]
 
         if own_wealth < 0:
-            d = 0.5  # if your own wealth is negative you're more likely to commit crimes
+            # if your own wealth is negative you're more likely to commit crimes
+            d = 0.5  
         else:
             d = 0.01
 
-        utility = a * wealth - b * district_risk * risk - c * distance - d * own_wealth
+        utility = (
+            + a * wealth 
+            - b * district_risk * risk 
+            - c * distance 
+            - d * own_wealth
+        )
         return utility
 
 
@@ -135,7 +155,10 @@ class Criminal(Agent):
                             radius=self.search_radius
                         )
                         for cell in neighborhood:
-                            utility_scores[cell] = self.get_utility(cell, b=self.risk_aversion)
+                            utility_scores[cell] = self.get_utility(
+                                cell, 
+                                b=self.risk_aversion
+                            )
 
         # determine the cell with the highest utility
         highest_utility = max(utility_scores.values())
@@ -150,6 +173,7 @@ class Criminal(Agent):
         make_buddy_move = False
         target_cell = random.choice(possible_targets)
 
+        # move towards your buddy 
         if target_cell not in own_neighborhood: 
             make_buddy_move = True
             if self.pos[0] > target_cell[0]:
@@ -170,7 +194,11 @@ class Criminal(Agent):
         self.model.grid.move_agent(self, target_cell)
 
         # do the crime
-        if self.get_wealth(target_cell) > 0 and highest_utility > 0 and not make_buddy_move:
+        if (
+            self.get_wealth(target_cell) > 0 
+            and highest_utility > 0 
+            and not make_buddy_move
+        ):
             self.does_crime = True
             self.do_crime(target_cell)
         else:
@@ -180,6 +208,9 @@ class Criminal(Agent):
         self.wealth -= 20
 
 class Sugar(Agent):
+    """
+    Governs the behaviour of the Sugar agent.
+    """
     def __init__(self, pos, model, max_sugar, steps_since_crime):
         super().__init__(pos, model)
         self.amount = max_sugar
@@ -187,6 +218,9 @@ class Sugar(Agent):
         self.steps_since_crime = steps_since_crime
 
     def step(self):
+        """
+        Replenishes the amount of sugar on the cell after a crime.
+        """
         if self.steps_since_crime > 0:
             self.amount = self.max_sugar - 2
             self.steps_since_crime -= 1
