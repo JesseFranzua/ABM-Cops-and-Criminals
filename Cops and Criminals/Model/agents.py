@@ -228,7 +228,11 @@ class Sugar(Agent):
             self.amount = self.max_sugar
 
 class Cop(Agent):
-    def __init__(self, pos, model, catch_radius=1, jail_sentence=10, id = np.random.random(), cop_stays_in_district=0, surveillance_radius=1):
+    def __init__(
+        self, pos, model, catch_radius=1, jail_sentence=10, 
+        id = np.random.random(), cop_stays_in_district=0, 
+        surveillance_radius=1
+    ):
         super().__init__(pos, model)
         self.pos = pos
         self.catch_radius = catch_radius
@@ -238,45 +242,88 @@ class Cop(Agent):
         self.surveillance_radius = surveillance_radius
 
     def new_cop(self):
+        """
+        Places a new cop on the grid.
+        """
         self.model.new_agent(Cop, self.pos)
         self.model.n_cops += 1
 
     def remove_cop(self):
-        # we may not end up removing any cops but still nice to have this function
+        """
+        Removes a cop from the grid.
+        """
         self.model.remove_agent(self)
         self.model.n_cops -= 1 
 
     def distribute_cops(self, crime_rates, current_distr):
-        # this functions tells the step function how many cops have to switch city parts
-        # assume crite_rates is a dictionary with the number of crimes per city part, eg: dict = {'zuid': 42, 'oost': 32, 'noord': 50, 'west': 1000}
+        """
+        This functions tells the step function 
+        how many cops have to switch city parts
+        assume crite_rates is a dictionary 
+        with the number of crimes per city part, 
+        eg: dict = {'zuid': 42, 'oost': 32, 'noord': 50, 'west': 1000}.
+        """
+
         if np.sum([i for i in crime_rates.values()]) > 0:
             total_crime = np.sum([i for i in crime_rates.values()])
-            nd_unrounded = {key: self.model.n_cops * value / total_crime for key, value in crime_rates.items()}
-            nd_decimals = {key: value - math.floor(value) for key, value in nd_unrounded.items()}
+            nd_unrounded = {
+                key: self.model.n_cops * value / total_crime 
+                for key, value in crime_rates.items()
+            }
+            nd_decimals = {
+                key: value - math.floor(value) 
+                for key, value in nd_unrounded.items()
+            }
 
-            cops_left = self.model.n_cops - np.sum([math.floor(i) for i in nd_unrounded.values()])
+            cops_left = (
+                self.model.n_cops 
+                - np.sum([math.floor(i) for i in nd_unrounded.values()])
+            )
             new_distribution = {}
             while cops_left > 0:
                 for key, value in nd_unrounded.items():
-                    if nd_decimals[key] - math.floor(nd_decimals[key]) == max(nd_decimals.values()):
+                    if (
+                        nd_decimals[key] - math.floor(nd_decimals[key]) 
+                        == max(nd_decimals.values())
+                    ):
                         new_distribution[key] = math.ceil(nd_unrounded[key])
                         nd_decimals[key] = 0
                         cops_left -= 1
             for key in nd_decimals.keys():
                 new_distribution[key] = math.floor(nd_unrounded[key])
 
-            return {key: value - current_distr[key] for key, value in new_distribution.items()}
+            return {
+                key: value - current_distr[key] 
+                for key, value in new_distribution.items()
+            }
         else:
             return current_distr
 
     def step(self):
-        # when the first cop each step is asked to move, calculate the the distribution 
-        #causes tango
+        """
+        
+        """
+  
         current_district = self.model.get_district(self.pos)
-        self.surveillance_radius = self.model.surveillance_levels[current_district]
+        self.surveillance_radius = (
+            self.model.surveillance_levels[current_district]
+        )
         if self.model.cops_that_stepped == 0:
-            self.model.distribution_changes = self.distribute_cops(self.model.get_crimes_per_district(), self.model.get_agents_per_district(Cop))
-            self.model.made_changes = {'Centrum': 0, 'Nieuw-West': 0, 'Noord': 0, 'Oost': 0, 'West': 0, 'Westpoort': 0, 'Zuid': 0, 'Zuidoost': 0, 'Undefined':0}
+            self.model.distribution_changes = self.distribute_cops(
+                self.model.get_crimes_per_district(), 
+                self.model.get_agents_per_district(Cop)
+            )
+            self.model.made_changes = {
+                'Centrum': 0, 
+                'Nieuw-West': 0, 
+                'Noord': 0, 
+                'Oost': 0, 
+                'West': 0, 
+                'Westpoort': 0, 
+                'Zuid': 0, 
+                'Zuidoost': 0, 
+                'Undefined': 0
+            }
             self.model.districts_in_deficit = []
             self.model.districts_in_surplus = []
             for district, balance in self.model.distribution_changes.items():
@@ -300,7 +347,10 @@ class Cop(Agent):
                 if district in self.model.districts_in_surplus:
                     self.model.made_changes[district] -= 1
                     new_district, new_pos, yes = self.new_district_move()
-                    if yes == 'yes' and self.model.get_district(new_pos) != "Undefined":
+                    if (
+                        yes == 'yes' 
+                        and self.model.get_district(new_pos) != "Undefined"
+                    ):
                         self.model.made_changes[new_district] += 1
                         self.model.grid.move_agent(self, new_pos)
                         self.catch_criminal(1)
@@ -319,10 +369,29 @@ class Cop(Agent):
             self.cop_stays_in_district = 5
 
     def new_district_move(self):
-        centers = {'Centrum': (32, 30), 'Nieuw-West': (9, 14), 'Noord': (31, 43), 'Oost': (40, 18), 'West': (23, 27), 'Westpoort': (12, 33), 'Zuid': (25, 11), 'Zuidoost': (45, 14)}
-        distance_to_districts = {'Centrum': get_distance(self.pos, (32, 30)), 'Nieuw-West': get_distance(self.pos, (9, 14)), 
-        'Noord': get_distance(self.pos, (31, 43)), 'Oost': get_distance(self.pos, (40, 18)), 'West': get_distance(self.pos, (23, 27)), 
-        'Westpoort': get_distance(self.pos, (12, 33)), 'Zuid': get_distance(self.pos, (25, 11)), 'Zuidoost': get_distance(self.pos, (45, 14))}
+        """
+        Moves the cop towards a new district if there is a deficit of cops.
+        """
+        centers = {
+            'Centrum': (32, 30), 
+            'Nieuw-West': (9, 14), 
+            'Noord': (31, 43), 
+            'Oost': (40, 18), 
+            'West': (23, 27), 
+            'Westpoort': (12, 33), 
+            'Zuid': (25, 11), 
+            'Zuidoost': (45, 14)
+        }
+        distance_to_districts = {
+            'Centrum': get_distance(self.pos, (32, 30)), 
+            'Nieuw-West': get_distance(self.pos, (9, 14)), 
+            'Noord': get_distance(self.pos, (31, 43)), 
+            'Oost': get_distance(self.pos, (40, 18)), 
+            'West': get_distance(self.pos, (23, 27)), 
+            'Westpoort': get_distance(self.pos, (12, 33)), 
+            'Zuid': get_distance(self.pos, (25, 11)), 
+            'Zuidoost': get_distance(self.pos, (45, 14))
+        }
 
         options = {}
         for key, value in distance_to_districts.items():
@@ -355,37 +424,60 @@ class Cop(Agent):
             return new_district, (x_new, y_new), 'yes'
 
     def random_cop_move(self):
-        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=1)
+        """
+        Moves the cop in a random direction.
+        """
+        possible_moves = self.model.grid.get_neighborhood(
+            self.pos, 
+            moore=True,
+            include_center=False, 
+            radius=1
+        )
         # delete options outside the city part
         for index, move in enumerate(possible_moves):
-            if self.model.get_district(move) != self.model.get_district(self.pos):
+            if (
+                self.model.get_district(move) 
+                != self.model.get_district(self.pos)
+            ):
                 del possible_moves[index]
         new_pos = random.choice(possible_moves)
         self.model.grid.move_agent(self, new_pos)
         self.catch_criminal(self.catch_radius)        
     
     def move_to_crime(self):
-        # get moves in a large radius, delete those outside district, select the one with the lowest sugar
-        possible_moves = self.model.grid.get_neighborhood(self.pos, moore=True,include_center=False, radius=self.surveillance_radius)
+        """
+        get moves in a large radius, 
+        delete those outside district, select the one with the lowest sugar
+        """
+
+        possible_moves = self.model.grid.get_neighborhood(
+            self.pos, 
+            moore=True,
+            include_center=False, 
+            radius=self.surveillance_radius
+        )
         possible_moves_dict = {}
         sugar_per_move = []
         feasible_moves = []
         for index, move in enumerate(possible_moves):
-            #if self.model.get_district(move) != self.model.get_district(self.pos):
-                #del possible_moves[index]
-            if self.model.get_district(move) == self.model.get_district(self.pos):
+            if (
+                self.model.get_district(move) 
+                == self.model.get_district(self.pos)
+            ):
                 feasible_moves.append(move)
-                # possible_moves_dict[self.get_sugar(move)] = move
                 sugar_per_move.append(self.get_sugar(move))
 
-        # sugar_per_move.sort()
-        min_sugar_indices = np.where(sugar_per_move == np.min(sugar_per_move))[0]
-        #changed this so that within the region it moves towards any of the low sugar areas
+        min_sugar_indices = np.where(
+            sugar_per_move == np.min(sugar_per_move)
+        )[0]
+        # changed this so that within the region it 
+        # moves towards any of the low sugar areas
         direction = feasible_moves[random.choice(min_sugar_indices)]
-        if self.model.get_district(direction) != self.model.get_district(self.pos):
+        if (
+            self.model.get_district(direction) 
+            != self.model.get_district(self.pos)
+        ):
             print("gaat hier al fout : ", direction)
-
-        #direction = possible_moves_dict[sugar_per_move[0]]
 
         if self.pos[0] > direction[0]:
             if self.pos[0] - 2 >= 0:
@@ -413,28 +505,63 @@ class Cop(Agent):
             y_new = self.pos[1]
 
         new_pos = (x_new, y_new)
-        # if (self.pos[0] == 0 or self.pos[0] == 49) or (self.pos[1] == 0 or self.pos[1] == 49):
-        #     print("self.pos : ", self.pos)
-        #     print("new_pos : ", new_pos)
-        #     print("direction : ", direction)
 
-        if self.model.get_district(new_pos) != self.model.get_district(self.pos):
-            if (self.pos[0] - 1 >= 0 and self.pos[1] - 1 >= 0) and (self.pos[0] + 1 <= 49 and self.pos[1] + 1 <= 49):
-                if (self.model.get_district((self.pos[0], self.pos[1] - 1)) != self.model.get_district(self.pos)) and (
-                    self.model.get_district((self.pos[0], self.pos[1] - 1)) == self.model.get_district(new_pos)
-                    ): # new district is below current district
+
+        if (
+            self.model.get_district(new_pos) 
+            != self.model.get_district(self.pos)
+        ):
+            if (
+                (self.pos[0] - 1 >= 0 and self.pos[1] - 1 >= 0) 
+                and (self.pos[0] + 1 <= 49 and self.pos[1] + 1 <= 49)
+            ):
+                if (
+                    (
+                        self.model.get_district((self.pos[0], self.pos[1] - 1)) 
+                        != self.model.get_district(self.pos)
+                    ) 
+                    and 
+                    (
+                        self.model.get_district((self.pos[0], self.pos[1] - 1)) 
+                        == self.model.get_district(new_pos)
+                    )
+                ): # new district is below current district
                     y_new = self.pos[1]
-                elif (self.model.get_district((self.pos[0], self.pos[1] + 1)) != self.model.get_district(self.pos)) and (
-                    self.model.get_district((self.pos[0], self.pos[1] + 1)) == self.model.get_district(new_pos)
-                    ): # new district is above current district
+                elif (
+                    (
+                        self.model.get_district((self.pos[0], self.pos[1] + 1)) 
+                        != self.model.get_district(self.pos)
+                    ) 
+                    and 
+                    (
+                        self.model.get_district((self.pos[0], self.pos[1] + 1)) 
+                        == self.model.get_district(new_pos)
+                    )
+                ): # new district is above current district
                     y_new = self.pos[1]
-                elif (self.model.get_district((self.pos[0] - 1, self.pos[1])) != self.model.get_district(self.pos)) and (
-                    self.model.get_district((self.pos[0] - 1, self.pos[1])) == self.model.get_district(new_pos)
-                    ): # new district is to the left of the current district
+                elif (
+                    (
+                        self.model.get_district((self.pos[0] - 1, self.pos[1])) 
+                        != self.model.get_district(self.pos)
+                    ) 
+                    and 
+                    (
+                        self.model.get_district((self.pos[0] - 1, self.pos[1])) 
+                        == self.model.get_district(new_pos)
+                    )
+                ): # new district is to the left of the current district
                     x_new = self.pos[0]
-                elif (self.model.get_district((self.pos[0] + 1, self.pos[1])) != self.model.get_district(self.pos)) and (
-                    self.model.get_district((self.pos[0] + 1, self.pos[1])) == self.model.get_district(new_pos)
-                    ): # new district is to the right of the current district
+                elif (
+                    (
+                        self.model.get_district((self.pos[0] + 1, self.pos[1])) 
+                        != self.model.get_district(self.pos)
+                    ) 
+                    and 
+                    (
+                        self.model.get_district((self.pos[0] + 1, self.pos[1])) 
+                        == self.model.get_district(new_pos)
+                    )
+                ): # new district is to the right of the current district
                     x_new = self.pos[0]
 
                 new_pos = (x_new, y_new)
@@ -446,6 +573,9 @@ class Cop(Agent):
             self.catch_criminal(self.catch_radius)   
 
     def police_here(self,pos):
+        """
+        Return a bool indication the presense of police on a cell.
+        """
         this_cell = self.model.grid.get_cell_list_contents([pos])
         for agent in this_cell:
             if type(agent) is Cop:
@@ -453,23 +583,33 @@ class Cop(Agent):
         return False
         
     def get_sugar(self, pos):
+        """
+        Return the amount of sugar on a cell.
+        """
         this_cell = self.model.grid.get_cell_list_contents([pos])
         for agent in this_cell:
             if type(agent) is Sugar:
-                return int(agent.amount) 
-
-    def get_max_sugar(self, pos):
-        this_cell = self.model.grid.get_cell_list_contents([pos])
-        for agent in this_cell:
-            if type(agent) is Sugar:
-                return int(agent.amount)     
+                return int(agent.amount)    
 
     def catch_criminal(self, catch_radius):
-        neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True, radius=catch_radius)
-        catchable_criminals = [obj for obj in neighbors if isinstance(obj, Criminal)]
+        """
+        Catch a criminal if it is within reach 
+        and has comitted a crime in the current step.
+        """
+        neighbors = self.model.grid.get_neighbors(
+            self.pos, 
+            moore=True, 
+            include_center=True, 
+            radius=catch_radius
+        )
+        catchable_criminals = [
+            obj for obj in neighbors if isinstance(obj, Criminal)
+        ]
         if len(catchable_criminals) > 0:
             criminal_to_catch = self.random.choice(catchable_criminals)         
             #if not yet in jail
             if(criminal_to_catch.jail_time==0 and criminal_to_catch.does_crime):
-                criminal_to_catch.wealth -= self.get_max_sugar(criminal_to_catch.pos)
+                criminal_to_catch.wealth -= self.get_sugar(
+                    criminal_to_catch.pos
+                )
                 criminal_to_catch.jail_time += self.jail_sentence
